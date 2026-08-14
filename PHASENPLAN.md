@@ -27,8 +27,11 @@ Akustisches Signal (Web Audio API) und Vibration (Vibration API, Android/Chrome)
 ### Phase 4 – Presets speichern ✅ erledigt
 Gespeicherte Vorlagen (z. B. "Dehnroutine Morgen") über `localStorage`, bleiben nach Schließen der App erhalten. Presets lassen sich per Klick laden und wieder löschen.
 
-### Phase 5 – PWA-Fähigkeit ⏳ offen
-Manifest + Service Worker ergänzen, damit die App auf Android installierbar wird.
+### Phase 5 – Design-Feinschliff ✅ erledigt
+Fortschrittsring um die Countdown-Anzeige (leert sich synchron zur verbleibenden Zeit), neues blaues Farbschema für Übung/Pause statt Rot/Grün, ausgewogenere vertikale Layout-Verteilung und 2x2-Raster für die vier Buttons.
+
+### Phase 6 – PWA-Fähigkeit ✅ erledigt
+Manifest + Service Worker + Icons ergänzt, App ist auf Android über Chrome/Edge installierbar (getestet, funktioniert). Gehostet über GitHub Pages: https://pascalg42.github.io/first-steps/
 
 ## Workflow nach jeder Phase
 1. Im Browser testen

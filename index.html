@@ -7,21 +7,20 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#204e6f">
 <style>
-  /* Grundlegendes Layout: alles zentriert auf der Seite */
+  /* Grundlegendes Layout: der Inhalt (siehe #inhalt) wird als ein kompakter Block
+     vertikal zentriert, statt Platz gleichmäßig über die ganze Bildschirmhöhe zu
+     verteilen - das verhindert auf sehr hohen Handy-Bildschirmen unnötig große Lücken
+     zwischen den Abschnitten. */
   body {
     font-family: Arial, sans-serif;
     background-color: #1e1e2f;
     color: #ffffff;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    /* space-evenly statt center: verteilt den Platz gleichmäßig ZWISCHEN allen
-       Abschnitten, statt den ganzen Inhalt als einen Block zu zentrieren (das sorgte
-       vorher für einseitig viel Leerraum oberhalb der Überschrift) */
-    justify-content: space-evenly;
+    justify-content: center;
     /* min-height statt einer festen height: der Inhalt darf bei Bedarf wachsen und die
        Seite scrollbar werden, statt bei zu wenig Platz (z.B. auf schmalen Handys)
-       abgeschnitten oder ungleichmäßig zusammengequetscht zu werden.
+       abgeschnitten zu werden.
        100dvh berücksichtigt zusätzlich die (ein-/ausblendende) Adressleiste mobiler
        Browser genauer als 100vh - Browser ohne dvh-Unterstützung nutzen einfach 100vh. */
     min-height: 100vh;
@@ -31,6 +30,16 @@
     box-sizing: border-box;
     /* Sanfter Übergang, wenn sich die Hintergrundfarbe je nach Phase ändert */
     transition: background-color 0.4s ease;
+  }
+
+  /* Umhüllt den gesamten sichtbaren Inhalt als einen in sich geschlossenen Block mit
+     moderaten, gleichmäßigen Abständen zwischen den Abschnitten (statt Verteilung
+     über die volle Bildschirmhöhe). Dieser Block wird von body vertikal zentriert. */
+  #inhalt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
   }
 
   /* Phase 2: Hintergrundfarbe zeigt, ob gerade "Übung" oder "Pause" aktiv ist.
@@ -47,14 +56,13 @@
   }
 
   h1 {
-    margin-bottom: 20px;
+    margin: 0;
   }
 
   /* Eingabebereich: die drei Einstellungsfelder nebeneinander */
   #eingabe-bereich {
     display: flex;
     gap: 20px;
-    margin-bottom: 20px;
   }
 
   .eingabe-feld {
@@ -78,13 +86,11 @@
     font-size: 28px;
     font-weight: bold;
     letter-spacing: 2px;
-    margin-bottom: 5px;
   }
 
   /* Zeigt den Rundenfortschritt, z.B. "Runde 3 von 5" */
   #runden-anzeige {
     font-size: 20px;
-    margin-bottom: 10px;
     opacity: 0.85;
   }
 
@@ -95,7 +101,6 @@
     height: 300px;
     max-width: 80vw;
     max-height: 80vw;
-    margin: 20px 0;
   }
 
   /* Der Ring liegt als SVG hinter der Zahl, gedreht auf "12 Uhr"-Start */
@@ -198,7 +203,6 @@
 
   /* Phase 4: Bereich zum Speichern/Laden von Presets */
   #presets-bereich {
-    margin-top: 25px;
     width: 320px;
     max-width: 90vw;
   }
@@ -255,6 +259,9 @@
 </head>
 <body>
 
+  <!-- Umhüllt den gesamten Inhalt als kompakten, zentrierten Block (siehe #inhalt im CSS) -->
+  <div id="inhalt">
+
   <h1>Intervalltimer</h1>
 
   <div id="eingabe-bereich">
@@ -304,6 +311,8 @@
     </div>
     <ul id="presets-liste"></ul>
   </div>
+
+  </div> <!-- Ende #inhalt -->
 
   <script>
     // ---- Variablen, die den Zustand des Timers speichern ----
