@@ -132,8 +132,8 @@
      etwas Entfernung (waehrend des Trainings) gut lesbar sein soll. */
   #countdown-wrapper {
     position: relative;
-    width: clamp(320px, 82vw, 480px);
-    height: clamp(320px, 82vw, 480px);
+    width: clamp(340px, 86vw, 500px);
+    height: clamp(340px, 86vw, 500px);
   }
 
   /* Der Ring liegt als SVG hinter der Zahl, gedreht auf "12 Uhr"-Start */
@@ -182,7 +182,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(60px, 16vw, 110px);
+    /* Deutlich größer als vorher, damit die Zahl den Platz füllt, den der Ring
+       vorgibt, statt klein in der Mitte zu stehen (Verhältnis Schrift zu Ring
+       bewusst ähnlich wie bei #countdown-wrapper gehalten) */
+    font-size: clamp(80px, 22vw, 130px);
     font-weight: bold;
     font-variant-numeric: tabular-nums; /* Ziffern bleiben gleich breit, kein "Wackeln" */
   }
