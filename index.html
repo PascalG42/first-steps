@@ -180,10 +180,14 @@
     color: white;
   }
 
-  /* Start/Pause/Zurücksetzen/Ton an als gleichmäßiges 2x2-Raster statt "3 + 1 einzeln" */
+  /* Start/Pause/Zurücksetzen als reine Symbol-Buttons in einer Dreier-Reihe (der
+     Ton-Button wurde herausgenommen, siehe #stumm-button weiter unten). Die Reihe
+     behält die bisherige Gesamtbreite, die drei Buttons werden aber so groß wie
+     möglich skaliert (großzügiges Padding, große Symbol-Schrift) für eine bessere
+     Bedienbarkeit mit dem Daumen. */
   #button-bereich {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: clamp(10px, 3vw, 16px);
     width: clamp(300px, 80vw, 420px);
   }
@@ -192,6 +196,22 @@
     /* Der Grid-"gap" übernimmt den Abstand, deshalb hier kein zusätzlicher Button-Rand */
     margin: 0;
     width: 100%;
+    /* Große Symbol-Schrift statt Text, quadratisch für eine gut tippbare Fläche */
+    font-size: clamp(28px, 8vw, 40px);
+    padding: clamp(16px, 5vw, 22px) 0;
+    aspect-ratio: 1;
+  }
+
+  /* Ton-Button: reines Lautsprecher-Symbol, klein und fest oben rechts positioniert -
+     unabhängig vom übrigen Layout darunter (bleibt beim Scrollen an derselben Stelle). */
+  #stumm-button {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    margin: 0;
+    font-size: 22px;
+    padding: 8px 10px;
+    z-index: 10; /* liegt über dem restlichen Inhalt */
   }
 
   button:hover {
@@ -272,6 +292,9 @@
 </head>
 <body>
 
+  <!-- Ton-Symbol: fest oben rechts, unabhängig vom Layout darunter (siehe CSS) -->
+  <button id="stumm-button">🔈</button>
+
   <!-- Umhüllt den gesamten Inhalt als vertikal zentrierten Block (siehe #inhalt im CSS) -->
   <div id="inhalt">
 
@@ -309,11 +332,11 @@
 
   <div id="fertig-meldung"></div>
 
+  <!-- Start/Pause/Zurücksetzen als reine Symbol-Buttons in einer Dreier-Reihe -->
   <div id="button-bereich">
-    <button id="start-button">Start</button>
-    <button id="pause-button" disabled>Pause</button>
-    <button id="reset-button">Zurücksetzen</button>
-    <button id="stumm-button">🔈 Ton an</button>
+    <button id="start-button">▶️</button>
+    <button id="pause-button" disabled>⏸️</button>
+    <button id="reset-button">🔄</button>
   </div>
 
   <!-- Phase 4: Presets speichern, laden und löschen -->
@@ -779,10 +802,11 @@
       eingabenAktivieren(true);
     }
 
-    // Schaltet den Lautlos-Modus um und aktualisiert Beschriftung/Optik des Buttons
+    // Schaltet den Lautlos-Modus um und aktualisiert Symbol/Optik des Buttons
+    // (reines Symbol statt Text: 🔈 = Ton an, 🔇 = durchgestrichen/stumm)
     function schalteStummUm() {
       stummgeschaltet = !stummgeschaltet;
-      stummButton.textContent = stummgeschaltet ? "🔇 Stumm" : "🔈 Ton an";
+      stummButton.textContent = stummgeschaltet ? "🔇" : "🔈";
       stummButton.classList.toggle("stumm-aktiv", stummgeschaltet);
     }
 
