@@ -97,6 +97,15 @@
   }
 
   /* Zeigt die aktuelle Phase als Text (z.B. "ÜBUNG" oder "PAUSE") */
+  /* Hält Phasen- und Rundenanzeige eng zusammen (kleiner, fester Abstand statt des
+     großen #inhalt-Zwischenraums) */
+  #status-anzeige {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
   #phase-anzeige {
     font-size: clamp(24px, 6.5vw, 36px);
     font-weight: bold;
@@ -109,13 +118,22 @@
     opacity: 0.85;
   }
 
+  /* Hält Ring, Fertig-Meldung und Buttons eng zusammen, damit unter dem Ring keine
+     große Lücke zu den Buttons entsteht */
+  #ring-und-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(8px, 2vw, 14px);
+  }
+
   /* Umhüllt Countdown-Zahl und Fortschrittsring, damit die Zahl mittig im Ring sitzt.
      Deutlich groesser als vorher, da der Ring das wichtigste Element ist und auch aus
      etwas Entfernung (waehrend des Trainings) gut lesbar sein soll. */
   #countdown-wrapper {
     position: relative;
-    width: clamp(300px, 74vw, 460px);
-    height: clamp(300px, 74vw, 460px);
+    width: clamp(320px, 82vw, 480px);
+    height: clamp(320px, 82vw, 480px);
   }
 
   /* Der Ring liegt als SVG hinter der Zahl, gedreht auf "12 Uhr"-Start */
@@ -230,11 +248,15 @@
     background-color: #8a3a3a;
   }
 
-  /* Wird angezeigt, wenn das Training abgelaufen ist */
+  /* Wird angezeigt, wenn das Training abgelaufen ist. min-height (statt fester height)
+     reserviert nur so viel Platz, wie die aktuelle Schriftgröße braucht - bei leerem
+     Text bleibt so kein unnötig großer Leerraum zum Ring darüber bzw. den Buttons
+     darunter stehen, und der Text wird beim großen Ende der Schriftgröße nicht
+     abgeschnitten. */
   #fertig-meldung {
     font-size: clamp(20px, 5vw, 28px);
     color: #7CFC00;
-    height: 30px;
+    min-height: clamp(24px, 6vw, 34px);
   }
 
   /* Phase 4: Bereich zum Speichern/Laden von Presets */
@@ -317,28 +339,35 @@
     </div>
   </div>
 
-  <!-- Zeigt an, ob gerade "Übung" oder "Pause" läuft -->
-  <div id="phase-anzeige">ÜBUNG</div>
+  <!-- Phasen- und Rundenanzeige eng zusammen, statt mit dem großen Standardabstand -->
+  <div id="status-anzeige">
+    <!-- Zeigt an, ob gerade "Übung" oder "Pause" läuft -->
+    <div id="phase-anzeige">ÜBUNG</div>
 
-  <!-- Zeigt den Rundenfortschritt an -->
-  <div id="runden-anzeige">Runde 1 von 5</div>
-
-  <!-- Fortschrittsring + große Countdown-Anzeige -->
-  <div id="countdown-wrapper">
-    <svg id="fortschritts-ring" viewBox="0 0 200 200">
-      <circle class="ring-hintergrund" cx="100" cy="100" r="90"></circle>
-      <circle id="ring-fortschritt" cx="100" cy="100" r="90"></circle>
-    </svg>
-    <div id="anzeige">00:30</div>
+    <!-- Zeigt den Rundenfortschritt an -->
+    <div id="runden-anzeige">Runde 1 von 5</div>
   </div>
 
-  <div id="fertig-meldung"></div>
+  <!-- Ring, Fertig-Meldung und Buttons ebenfalls eng zusammen, damit unter dem Ring
+       keine große Lücke zu den Buttons entsteht -->
+  <div id="ring-und-buttons">
+    <!-- Fortschrittsring + große Countdown-Anzeige -->
+    <div id="countdown-wrapper">
+      <svg id="fortschritts-ring" viewBox="0 0 200 200">
+        <circle class="ring-hintergrund" cx="100" cy="100" r="90"></circle>
+        <circle id="ring-fortschritt" cx="100" cy="100" r="90"></circle>
+      </svg>
+      <div id="anzeige">00:30</div>
+    </div>
 
-  <!-- Start/Pause/Zurücksetzen als reine Symbol-Buttons in einer Dreier-Reihe -->
-  <div id="button-bereich">
-    <button id="start-button">▶️</button>
-    <button id="pause-button" disabled>⏸️</button>
-    <button id="reset-button">🔄</button>
+    <div id="fertig-meldung"></div>
+
+    <!-- Start/Pause/Zurücksetzen als reine Symbol-Buttons in einer Dreier-Reihe -->
+    <div id="button-bereich">
+      <button id="start-button">▶️</button>
+      <button id="pause-button" disabled>⏸️</button>
+      <button id="reset-button">🔄</button>
+    </div>
   </div>
 
   <!-- Phase 4: Presets speichern, laden und löschen -->
