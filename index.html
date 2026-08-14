@@ -53,16 +53,16 @@
   }
 
   /* Phase 2: Hintergrundfarbe zeigt, ob gerade "Übung" oder "Pause" aktiv ist.
-     Beide Farben liegen im selben (blauen) Farbton und unterscheiden sich vor allem
-     in der Helligkeit - das wirkt harmonisch und bleibt trotzdem klar unterscheidbar,
-     auch für Personen mit Rot-Grün-Sehschwäche. Weißer Text hat auf beiden Farben
-     einen Kontrast von über 4.5:1 (WCAG-AA-Richtwert für guten Lesekontrast). */
+     Übung nutzt jetzt das vormalige Pause-Blau, Pause einen dazu passenden, ruhigen
+     Grünton in ähnlicher Helligkeit - das wirkt weiterhin harmonisch und bleibt klar
+     unterscheidbar. Weißer Text hat auf beiden Farben einen Kontrast von über 4.5:1
+     (WCAG-AA-Richtwert für guten Lesekontrast). */
   body.phase-uebung {
-    background-color: #204e6f; /* ruhiges, dunkleres Blau */
+    background-color: #386e94; /* freundliches Blau (vormals die Pause-Farbe) */
   }
 
   body.phase-pause {
-    background-color: #386e94; /* hellere Variante desselben Blautons */
+    background-color: #367857; /* ruhiges, passendes Grün */
   }
 
   h1 {
@@ -147,13 +147,14 @@
     transition: stroke-dashoffset 1s linear, stroke 0.4s ease;
   }
 
-  /* Ringfarbe passt sich der jeweiligen Phase an (hell auf dunklem Grund, dunkel auf hellem) */
+  /* Ringfarbe passt sich der jeweiligen Phase an (dunkel auf dem mittelhellen Übungs-Blau,
+     hell auf dem dunkleren Pause-Grün) */
   body.phase-uebung #ring-fortschritt {
-    stroke: #8ecff5;
+    stroke: #123c57;
   }
 
   body.phase-pause #ring-fortschritt {
-    stroke: #123c57;
+    stroke: #b5e3cc;
   }
 
   /* Die große Countdown-Anzeige, jetzt mittig über dem Ring platziert */
@@ -168,7 +169,8 @@
     font-variant-numeric: tabular-nums; /* Ziffern bleiben gleich breit, kein "Wackeln" */
   }
 
-  /* Buttons */
+  /* Buttons: neutraler, dunkler Blaugrau-Ton statt des vorherigen Lila-Tons - passt
+     unaufdringlich zu beiden Phasenfarben (Blau und Grün), statt mit ihnen zu konkurrieren */
   button {
     font-size: clamp(18px, 4.5vw, 24px);
     padding: clamp(12px, 3vw, 16px) clamp(18px, 5vw, 28px);
@@ -176,7 +178,7 @@
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    background-color: #4a4a6a;
+    background-color: #37424f;
     color: white;
   }
 
@@ -215,11 +217,11 @@
   }
 
   button:hover {
-    background-color: #6a6a9a;
+    background-color: #4c5a68;
   }
 
   button:disabled {
-    background-color: #333344;
+    background-color: #33393f;
     cursor: not-allowed;
   }
 
