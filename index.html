@@ -2,6 +2,12 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
+<!-- Ohne diesen Viewport-Tag rendern mobile Browser die Seite gegen eine virtuelle
+     Desktop-Breite (~980px) und zoomen dann verkleinert auf den Bildschirm - alles
+     wirkt dadurch klein und man muss manuell reinzoomen. width=device-width sorgt
+     dafuer, dass 1 CSS-Pixel = 1 Geraete-Pixel entspricht, initial-scale=1 verhindert
+     zusaetzliches Herauszoomen beim ersten Laden. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Intervalltimer</title>
 <!-- PWA: Manifest verknuepfen, damit Chrome auf Android die App als installierbar erkennt -->
 <link rel="manifest" href="manifest.json">
