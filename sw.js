@@ -52,13 +52,28 @@ self.addEventListener("activate", function (event) {
 });
 
 // "fetch" faengt jede Netzwerk-Anfrage der Seite ab (z.B. Laden von index.html oder
-// einer Sound-Datei). Cache-first-Strategie: liegt eine Antwort schon im Cache, wird
-// diese direkt zurueckgegeben (funktioniert auch offline). Nur wenn nichts im Cache
-// liegt, wird ganz normal ueber das Netzwerk nachgeladen.
+// einer Sound-Datei). Netzwerk-first-Strategie (mit Cache-Fallback): zuerst wird immer
+// versucht, die Datei ganz normal ueber das Netzwerk zu laden - so bekommt man bei
+// bestehender Verbindung stets den aktuellen Stand, ohne auf eine neue Service-Worker-
+// Version warten zu muessen. Nur wenn das Netzwerk fehlschlaegt (z.B. offline), wird auf
+// die zuletzt im Cache gespeicherte Version zurueckgegriffen.
 self.addEventListener("fetch", function (event) {
   event.respondWith(
-    caches.match(event.request).then(function (gecachteAntwort) {
-      return gecachteAntwort || fetch(event.request);
-    })
+    fetch(event.request)
+      .then(function (netzwerkAntwort) {
+        // Bei Erfolg: eine Kopie der frischen Antwort im Cache ablegen, damit der
+        // Offline-Fall weiterhin mit einem moeglichst aktuellen Stand funktioniert.
+        // clone() ist noetig, weil eine Response nur einmal gelesen werden kann -
+        // einmal fuer die Seite (return) und einmal fuer den Cache (cache.put).
+        const antwortKopie = netzwerkAntwort.clone();
+        caches.open(CACHE_NAME).then(function (cache) {
+          cache.put(event.request, antwortKopie);
+        });
+        return netzwerkAntwort;
+      })
+      .catch(function () {
+        // Netzwerk nicht erreichbar - auf die im Cache gespeicherte Version zurueckgreifen
+        return caches.match(event.request);
+      })
   );
 });
