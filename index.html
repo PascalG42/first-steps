@@ -105,6 +105,62 @@
     color: #7CFC00;
     height: 30px;
   }
+
+  /* Phase 4: Bereich zum Speichern/Laden von Presets */
+  #presets-bereich {
+    margin-top: 25px;
+    width: 320px;
+    max-width: 90vw;
+  }
+
+  .preset-eingabe {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  #preset-name-eingabe {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+    font-size: 16px;
+  }
+
+  #presets-liste {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  #presets-liste li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: rgba(255, 255, 255, 0.08);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  #presets-liste li span {
+    flex: 1;
+    margin-right: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #presets-liste button {
+    font-size: 14px;
+    padding: 4px 10px;
+    margin: 0 0 0 4px;
+  }
 </style>
 </head>
 <body>
@@ -143,6 +199,15 @@
     <button id="reset-button">Zurücksetzen</button>
   </div>
 
+  <!-- Phase 4: Presets speichern, laden und löschen -->
+  <div id="presets-bereich">
+    <div class="preset-eingabe">
+      <input type="text" id="preset-name-eingabe" placeholder="Name für Preset (z.B. Dehnroutine Morgen)">
+      <button id="preset-speichern-button">Speichern</button>
+    </div>
+    <ul id="presets-liste"></ul>
+  </div>
+
   <script>
     // ---- Variablen, die den Zustand des Timers speichern ----
 
@@ -167,6 +232,13 @@
     // weil Browser Töne nur nach einer Nutzer-Interaktion erlauben (Klick auf "Start").
     let audioContext = null;
 
+    // Phase 4: der Schlüssel, unter dem die Presets im localStorage abgelegt werden
+    const PRESETS_SPEICHER_SCHLUESSEL = "intervalltimer-presets";
+
+    // Phase 4: die Liste aller gespeicherten Presets, z.B.
+    // [{ name: "Dehnroutine Morgen", uebungDauer: 30, pauseDauer: 15, runden: 5 }, ...]
+    let presets = [];
+
     // ---- Referenzen auf die HTML-Elemente holen ----
     const uebungDauerEingabe = document.getElementById("uebung-dauer-eingabe");
     const pauseDauerEingabe = document.getElementById("pause-dauer-eingabe");
@@ -178,6 +250,9 @@
     const startButton = document.getElementById("start-button");
     const pauseButton = document.getElementById("pause-button");
     const resetButton = document.getElementById("reset-button");
+    const presetNameEingabe = document.getElementById("preset-name-eingabe");
+    const presetSpeichernButton = document.getElementById("preset-speichern-button");
+    const presetsListe = document.getElementById("presets-liste");
 
     // Liest eine Zahl aus einem Eingabefeld und sorgt dafür, dass sie mindestens "minimum" ist
     function holeZahlAusEingabe(element, minimum) {
@@ -222,6 +297,100 @@
       uebungDauerEingabe.disabled = !aktiv;
       pauseDauerEingabe.disabled = !aktiv;
       rundenEingabe.disabled = !aktiv;
+
+      // Phase 4: Preset-Speichern ebenfalls sperren, solange der Timer läuft
+      presetNameEingabe.disabled = !aktiv;
+      presetSpeichernButton.disabled = !aktiv;
+      zeigePresetsAn(); // baut die Liste neu auf, damit "Laden"/"Löschen" passend gesperrt sind
+    }
+
+    // ---- Phase 4: Presets speichern, laden und löschen (über localStorage) ----
+
+    // Liest die gespeicherten Presets beim Start der Seite aus dem localStorage.
+    // localStorage speichert nur Text, deshalb müssen wir mit JSON.parse wieder
+    // ein normales JavaScript-Array daraus machen.
+    function ladePresetsAusSpeicher() {
+      const gespeicherterText = localStorage.getItem(PRESETS_SPEICHER_SCHLUESSEL);
+      if (gespeicherterText === null) {
+        presets = []; // noch nichts gespeichert
+      } else {
+        presets = JSON.parse(gespeicherterText);
+      }
+    }
+
+    // Schreibt die aktuelle Preset-Liste in den localStorage (als JSON-Text),
+    // damit sie auch nach dem Schließen des Browsers erhalten bleibt.
+    function speicherePresetsInSpeicher() {
+      localStorage.setItem(PRESETS_SPEICHER_SCHLUESSEL, JSON.stringify(presets));
+    }
+
+    // Baut die sichtbare Preset-Liste (die <ul>) komplett neu auf, ausgehend vom
+    // aktuellen Inhalt von presets[]. Wird nach jeder Änderung erneut aufgerufen.
+    function zeigePresetsAn() {
+      presetsListe.innerHTML = ""; // Liste leeren, bevor sie neu aufgebaut wird
+
+      presets.forEach(function (preset, index) {
+        const listenEintrag = document.createElement("li");
+
+        const nameText = document.createElement("span");
+        nameText.textContent =
+          preset.name + " (" + preset.uebungDauer + "s / " + preset.pauseDauer + "s / " + preset.runden + " Runden)";
+
+        const ladenButton = document.createElement("button");
+        ladenButton.textContent = "Laden";
+        ladenButton.disabled = intervallId !== null; // während der Timer läuft nicht ladbar
+        ladenButton.addEventListener("click", function () {
+          ladePreset(index);
+        });
+
+        const loeschenButton = document.createElement("button");
+        loeschenButton.textContent = "Löschen";
+        loeschenButton.disabled = intervallId !== null;
+        loeschenButton.addEventListener("click", function () {
+          loeschePreset(index);
+        });
+
+        listenEintrag.appendChild(nameText);
+        listenEintrag.appendChild(ladenButton);
+        listenEintrag.appendChild(loeschenButton);
+        presetsListe.appendChild(listenEintrag);
+      });
+    }
+
+    // Speichert die aktuellen Werte der drei Eingabefelder als neues Preset
+    function speicherePreset() {
+      const name = presetNameEingabe.value.trim();
+      if (name === "") {
+        return; // ohne Namen kein Preset anlegen
+      }
+
+      presets.push({
+        name: name,
+        uebungDauer: holeZahlAusEingabe(uebungDauerEingabe, 1),
+        pauseDauer: holeZahlAusEingabe(pauseDauerEingabe, 1),
+        runden: holeZahlAusEingabe(rundenEingabe, 1)
+      });
+
+      speicherePresetsInSpeicher();
+      zeigePresetsAn();
+      presetNameEingabe.value = ""; // Eingabefeld für den nächsten Namen leeren
+    }
+
+    // Überträgt die Werte eines gespeicherten Presets in die drei Eingabefelder
+    // und übernimmt sie direkt in den Timer (über setzeZurueck)
+    function ladePreset(index) {
+      const preset = presets[index];
+      uebungDauerEingabe.value = preset.uebungDauer;
+      pauseDauerEingabe.value = preset.pauseDauer;
+      rundenEingabe.value = preset.runden;
+      setzeZurueck();
+    }
+
+    // Entfernt ein Preset aus der Liste und aktualisiert den localStorage
+    function loeschePreset(index) {
+      presets.splice(index, 1);
+      speicherePresetsInSpeicher();
+      zeigePresetsAn();
     }
 
     // ---- Phase 3: akustische und haptische Signale ----
@@ -394,6 +563,12 @@
         setzeZurueck();
       }
     });
+
+    // Phase 4: Preset-Speichern-Button mit der Speicherfunktion verknüpfen
+    presetSpeichernButton.addEventListener("click", speicherePreset);
+
+    // Phase 4: gespeicherte Presets aus dem localStorage laden und anzeigen
+    ladePresetsAusSpeicher();
 
     // Beim Laden der Seite die Anzeige einmal initialisieren
     setzeZurueck();
