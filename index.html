@@ -12,20 +12,35 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 100vh;
+    /* space-evenly statt center: verteilt den Platz gleichmäßig ZWISCHEN allen
+       Abschnitten, statt den ganzen Inhalt als einen Block zu zentrieren (das sorgte
+       vorher für einseitig viel Leerraum oberhalb der Überschrift) */
+    justify-content: space-evenly;
+    /* min-height statt einer festen height: der Inhalt darf bei Bedarf wachsen und die
+       Seite scrollbar werden, statt bei zu wenig Platz (z.B. auf schmalen Handys)
+       abgeschnitten oder ungleichmäßig zusammengequetscht zu werden.
+       100dvh berücksichtigt zusätzlich die (ein-/ausblendende) Adressleiste mobiler
+       Browser genauer als 100vh - Browser ohne dvh-Unterstützung nutzen einfach 100vh. */
+    min-height: 100vh;
+    min-height: 100dvh;
     margin: 0;
+    padding: 16px 0;
+    box-sizing: border-box;
     /* Sanfter Übergang, wenn sich die Hintergrundfarbe je nach Phase ändert */
     transition: background-color 0.4s ease;
   }
 
-  /* Phase 2: Hintergrundfarbe zeigt, ob gerade "Übung" oder "Pause" aktiv ist */
+  /* Phase 2: Hintergrundfarbe zeigt, ob gerade "Übung" oder "Pause" aktiv ist.
+     Beide Farben liegen im selben (blauen) Farbton und unterscheiden sich vor allem
+     in der Helligkeit - das wirkt harmonisch und bleibt trotzdem klar unterscheidbar,
+     auch für Personen mit Rot-Grün-Sehschwäche. Weißer Text hat auf beiden Farben
+     einen Kontrast von über 4.5:1 (WCAG-AA-Richtwert für guten Lesekontrast). */
   body.phase-uebung {
-    background-color: #7a1f1f; /* warmes Rot = Anstrengung */
+    background-color: #204e6f; /* ruhiges, dunkleres Blau */
   }
 
   body.phase-pause {
-    background-color: #1f4d3a; /* beruhigendes Grün = Erholung */
+    background-color: #386e94; /* hellere Variante desselben Blautons */
   }
 
   h1 {
@@ -70,11 +85,63 @@
     opacity: 0.85;
   }
 
-  /* Die große Countdown-Anzeige */
+  /* Umhüllt Countdown-Zahl und Fortschrittsring, damit die Zahl mittig im Ring sitzt */
+  #countdown-wrapper {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    max-width: 80vw;
+    max-height: 80vw;
+    margin: 20px 0;
+  }
+
+  /* Der Ring liegt als SVG hinter der Zahl, gedreht auf "12 Uhr"-Start */
+  #fortschritts-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  /* Blasser Kreis, der den vollen Umfang zeigt (die "Spur" für den Fortschritt) */
+  .ring-hintergrund {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 10;
+  }
+
+  /* Der eigentliche Fortschritt: leert sich synchron zum Countdown (siehe aktualisiereRing).
+     stroke-dasharray ist fest auf den Umfang des Kreises gesetzt (r=90 -> ca. 565.49),
+     muss also zum r-Attribut der beiden <circle>-Elemente im HTML passen. */
+  #ring-fortschritt {
+    fill: none;
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 565.49;
+    /* Weiche, flüssige Bewegung statt sprunghaftem Sprung bei jedem Sekunden-Tick */
+    transition: stroke-dashoffset 1s linear, stroke 0.4s ease;
+  }
+
+  /* Ringfarbe passt sich der jeweiligen Phase an (hell auf dunklem Grund, dunkel auf hellem) */
+  body.phase-uebung #ring-fortschritt {
+    stroke: #8ecff5;
+  }
+
+  body.phase-pause #ring-fortschritt {
+    stroke: #123c57;
+  }
+
+  /* Die große Countdown-Anzeige, jetzt mittig über dem Ring platziert */
   #anzeige {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 100px;
     font-weight: bold;
-    margin: 20px 0;
     font-variant-numeric: tabular-nums; /* Ziffern bleiben gleich breit, kein "Wackeln" */
   }
 
@@ -90,6 +157,21 @@
     color: white;
   }
 
+  /* Start/Pause/Zurücksetzen/Ton an als gleichmäßiges 2x2-Raster statt "3 + 1 einzeln" */
+  #button-bereich {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: 280px;
+    max-width: 90vw;
+  }
+
+  #button-bereich button {
+    /* Der Grid-"gap" übernimmt den Abstand, deshalb hier kein zusätzlicher Button-Rand */
+    margin: 0;
+    width: 100%;
+  }
+
   button:hover {
     background-color: #6a6a9a;
   }
@@ -97,6 +179,11 @@
   button:disabled {
     background-color: #333344;
     cursor: not-allowed;
+  }
+
+  /* Lautlos-Button sieht aktiv (gedrückt) aus, solange stummgeschaltet ist */
+  #stumm-button.stumm-aktiv {
+    background-color: #8a3a3a;
   }
 
   /* Wird angezeigt, wenn das Training abgelaufen ist */
@@ -188,8 +275,14 @@
   <!-- Zeigt den Rundenfortschritt an -->
   <div id="runden-anzeige">Runde 1 von 5</div>
 
-  <!-- Hier wird der Countdown groß angezeigt -->
-  <div id="anzeige">00:30</div>
+  <!-- Fortschrittsring + große Countdown-Anzeige -->
+  <div id="countdown-wrapper">
+    <svg id="fortschritts-ring" viewBox="0 0 200 200">
+      <circle class="ring-hintergrund" cx="100" cy="100" r="90"></circle>
+      <circle id="ring-fortschritt" cx="100" cy="100" r="90"></circle>
+    </svg>
+    <div id="anzeige">00:30</div>
+  </div>
 
   <div id="fertig-meldung"></div>
 
@@ -197,6 +290,7 @@
     <button id="start-button">Start</button>
     <button id="pause-button" disabled>Pause</button>
     <button id="reset-button">Zurücksetzen</button>
+    <button id="stumm-button">🔈 Ton an</button>
   </div>
 
   <!-- Phase 4: Presets speichern, laden und löschen -->
@@ -227,10 +321,29 @@
     // Phase 2: wie viele Runden sollen insgesamt trainiert werden (wird aus der Eingabe gelesen)
     let gesamtRunden = 5;
 
-    // Phase 3: der Audio-Kontext für erzeugte Signaltöne (Web Audio API).
+    // Gesamtdauer (in Sekunden) der aktuell laufenden Phase - wird gebraucht, um den
+    // Fortschrittsring als Anteil (verbleibendeSekunden / aktuellePhaseDauer) zu berechnen
+    let aktuellePhaseDauer = 30;
+
+    // Umfang des Ring-Kreises (2 * π * Radius). Der Radius (90) muss zum r-Attribut
+    // der beiden <circle>-Elemente im HTML passen und zum stroke-dasharray-Wert im CSS.
+    const RING_UMFANG = 2 * Math.PI * 90;
+
+    // Phase 3: der Audio-Kontext für den synthetisch erzeugten Ton am Trainingsende (Web Audio API).
     // Bleibt anfangs "null" und wird erst beim ersten Start erzeugt (siehe initialisiereAudio),
     // weil Browser Töne nur nach einer Nutzer-Interaktion erlauben (Klick auf "Start").
     let audioContext = null;
+
+    // Sound-Dateien für die Countdown-Vorwarnung und den Phasenwechsel (liegen im Ordner
+    // "sound_effects" neben dieser index.html). Jede Datei wird nur einmal geladen und
+    // bei Bedarf einfach erneut abgespielt (siehe spieleAudioDatei).
+    const beepSound = new Audio("sound_effects/beep.wav"); // Vorwarnung (2x identisch)
+    const endSound = new Audio("sound_effects/end.wav"); // Übungsphase endet
+    const startSound = new Audio("sound_effects/start.wav"); // Pausenphase endet
+
+    // Lautlos-Modus: wenn true, spielen spieleAudioDatei() und spieleTon() keinen Ton ab.
+    // Vibration ist davon bewusst nicht betroffen (bleibt als haptisches Feedback erhalten).
+    let stummgeschaltet = false;
 
     // Phase 4: der Schlüssel, unter dem die Presets im localStorage abgelegt werden
     const PRESETS_SPEICHER_SCHLUESSEL = "intervalltimer-presets";
@@ -246,10 +359,12 @@
     const phaseAnzeige = document.getElementById("phase-anzeige");
     const rundenAnzeige = document.getElementById("runden-anzeige");
     const anzeige = document.getElementById("anzeige");
+    const ringFortschritt = document.getElementById("ring-fortschritt");
     const fertigMeldung = document.getElementById("fertig-meldung");
     const startButton = document.getElementById("start-button");
     const pauseButton = document.getElementById("pause-button");
     const resetButton = document.getElementById("reset-button");
+    const stummButton = document.getElementById("stumm-button");
     const presetNameEingabe = document.getElementById("preset-name-eingabe");
     const presetSpeichernButton = document.getElementById("preset-speichern-button");
     const presetsListe = document.getElementById("presets-liste");
@@ -273,9 +388,39 @@
       return minutenText + ":" + sekundenText;
     }
 
-    // Aktualisiert die große Anzeige mit dem aktuellen Wert von verbleibendeSekunden
+    // Aktualisiert die große Anzeige mit dem aktuellen Wert von verbleibendeSekunden,
+    // und zusammen damit auch den Fortschrittsring (siehe aktualisiereRing)
     function aktualisiereAnzeige() {
       anzeige.textContent = formatiereZeit(verbleibendeSekunden);
+      aktualisiereRing();
+    }
+
+    // Berechnet, welcher Anteil der aktuellen Phase noch übrig ist, und setzt den
+    // Fortschrittsring entsprechend. Der Ring leert sich: bei vollem Anteil (Phasenstart)
+    // ist stroke-dashoffset 0 (ganzer Ring sichtbar), bei 0 Sekunden ist er beim vollen
+    // Umfang (Ring komplett "leer"). Die eigentliche Animation übernimmt die
+    // CSS-transition auf #ring-fortschritt.
+    //
+    // Wichtiger Sonderfall: bei "1 Sekunde übrig" behandeln wir den Ring schon als leer
+    // (Anteil 0), nicht erst bei "0 Sekunden übrig". Grund: die CSS-Animation zum
+    // Leerwerden braucht selbst eine volle Sekunde, um durchzulaufen. Würden wir sie erst
+    // bei 0 Sekunden starten, würde der Phasenwechsel (der genau dann sofort passiert und
+    // den Ring wieder auf "voll" zurücksetzt) die Animation sofort unterbrechen, bevor sie
+    // überhaupt sichtbar durchgelaufen ist. So bekommt sie die letzte volle Sekunde der
+    // Phase Zeit, um wirklich bei "leer" anzukommen, bevor der Wechsel erfolgt.
+    function aktualisiereRing() {
+      let anteilVerbleibend;
+      if (aktuellePhaseDauer <= 1) {
+        // Bei einer nur 1 Sekunde kurzen Phase bleibt keine Zeit für eine
+        // "Vorlauf-Leerung" - hier reicht die normale Berechnung ohne Sonderfall
+        anteilVerbleibend = aktuellePhaseDauer > 0 ? verbleibendeSekunden / aktuellePhaseDauer : 0;
+      } else if (verbleibendeSekunden > 1) {
+        anteilVerbleibend = verbleibendeSekunden / aktuellePhaseDauer;
+      } else {
+        anteilVerbleibend = 0; // letzte Sekunde der Phase: Ring gilt schon als leer
+      }
+      const versatz = RING_UMFANG * (1 - anteilVerbleibend);
+      ringFortschritt.style.strokeDashoffset = versatz;
     }
 
     // Phase 2: Aktualisiert Phasentext, Rundentext und die Hintergrundfarbe passend zur aktuellen Phase
@@ -395,21 +540,38 @@
 
     // ---- Phase 3: akustische und haptische Signale ----
 
-    // Erzeugt den Audio-Kontext einmalig. Muss innerhalb eines Klicks aufgerufen werden
-    // (z.B. beim Start-Button), sonst blockieren Browser die Tonausgabe.
+    // Erzeugt den Audio-Kontext einmalig und "entsperrt" die drei Sound-Dateien.
+    // Muss innerhalb eines Klicks aufgerufen werden (z.B. beim Start-Button), sonst
+    // blockieren Browser jegliche Tonausgabe ohne vorherige Nutzer-Interaktion.
     function initialisiereAudio() {
       if (audioContext === null) {
         // "webkitAudioContext" ist ein Fallback für ältere Safari-Versionen
         const AudioContextKlasse = window.AudioContext || window.webkitAudioContext;
         audioContext = new AudioContextKlasse();
+
+        // Jede Sound-Datei einmal kurz an- und wieder ausschalten. Das "entsperrt" die
+        // Wiedergabe für spätere, nicht durch einen Klick ausgelöste play()-Aufrufe
+        // (z.B. aus dem laufenden Countdown heraus).
+        [beepSound, endSound, startSound].forEach(function (audioElement) {
+          audioElement
+            .play()
+            .then(function () {
+              audioElement.pause();
+              audioElement.currentTime = 0;
+            })
+            .catch(function () {
+              // Entsperren fehlgeschlagen (z.B. Browser-Einschränkung) - beim eigentlichen
+              // Abspielen später wird es einfach erneut versucht
+            });
+        });
       }
     }
 
     // Erzeugt einen kurzen Signalton über die Web Audio API (kein Audio-File nötig).
     // frequenz = Tonhöhe in Hertz, dauerSekunden = wie lange der Ton klingt.
     function spieleTon(frequenz, dauerSekunden) {
-      if (audioContext === null) {
-        return; // Audio wurde noch nicht initialisiert (z.B. vor dem ersten Start)
+      if (audioContext === null || stummgeschaltet) {
+        return; // Audio noch nicht initialisiert oder Lautlos-Modus aktiv
       }
 
       const oszillator = audioContext.createOscillator(); // erzeugt die eigentliche Tonwelle
@@ -435,23 +597,68 @@
       }
     }
 
-    // Signal bei einem normalen Phasenwechsel (Übung -> Pause oder Pause -> Übung)
-    function spielePhasenwechselSignal() {
-      spieleTon(880, 0.15); // kurzer, hoher Ton
-      vibriere(200); // einzelne kurze Vibration (200ms)
+    // Spielt eine der drei geladenen Sound-Dateien ab. currentTime wird vorher auf 0
+    // gesetzt, damit der Sound auch dann sauber von vorne startet, wenn er kurz zuvor
+    // schon einmal abgespielt wurde.
+    function spieleAudioDatei(audioElement) {
+      if (stummgeschaltet) {
+        return; // Lautlos-Modus aktiv - kein Ton abspielen
+      }
+      audioElement.currentTime = 0;
+      audioElement.play().catch(function () {
+        // Wiedergabe blockiert oder Datei nicht ladbar - Training läuft trotzdem normal weiter
+      });
+    }
+
+    // Signal bei einem normalen Phasenwechsel (Übung -> Pause oder Pause -> Übung).
+    // Der Sound unterscheidet sich danach, welche Phase gerade zu Ende geht, damit man
+    // auch ohne hinzusehen hört, ob eine Übungs- oder eine Pausenphase endet.
+    function spielePhasenwechselSignal(beendetePhase) {
+      if (beendetePhase === "uebung") {
+        spieleAudioDatei(endSound); // Übung endet -> "end.wav"
+      } else {
+        spieleAudioDatei(startSound); // Pause endet -> "start.wav"
+      }
+      vibriere(200); // einzelne kurze Vibration (200ms), wie bisher bei jedem Phasenwechsel
     }
 
     // Signal, wenn das gesamte Training (alle Runden) abgeschlossen ist.
-    // Bewusst länger/tiefer als der normale Phasenwechsel-Ton, damit er sich klar unterscheidet.
+    // Bleibt bewusst der synthetische Web-Audio-Ton (kein Sound-File), damit er sich
+    // klar von den Phasenwechsel-Sounds unterscheidet. Unverändert eigenständig,
+    // keine Vorwarnung davor (siehe timerSchritt).
     function spieleEndSignal() {
       spieleTon(440, 0.6); // längerer, tieferer Ton
       vibriere([200, 100, 200, 100, 200]); // mehrfaches Vibrationsmuster
+    }
+
+    // Warnton für die Countdown-Vorwarnung ("pop.wav"), zweimal identisch abgespielt.
+    function spieleWarnton() {
+      spieleAudioDatei(beepSound);
+    }
+
+    // Bei diesen Werten von verbleibendeSekunden ertönt vor dem eigentlichen
+    // Phasenwechsel jeweils der Warnton (siehe timerSchritt). Drei Warntöne mit exakt
+    // 1 Sekunde Abstand, gefolgt vom unterscheidbaren Finalton bei 0.
+    const VORWARN_SEKUNDEN = [3, 2, 1];
+
+    // Prüft, ob nach Ablauf der aktuellen Phase ein normaler Phasenwechsel folgt
+    // (im Gegensatz zum endgültigen Trainingsende, das kein Vorwarn-Countdown bekommt,
+    // weil sein Signal separat und unverändert bleiben soll)
+    function stehtNormalerPhasenwechselBevor() {
+      return !(aktuellePhase === "uebung" && aktuelleRunde >= gesamtRunden);
     }
 
     // Wird jede Sekunde aufgerufen, solange der Timer läuft
     function timerSchritt() {
       verbleibendeSekunden--;
       aktualisiereAnzeige();
+
+      // Countdown-Vorwarnung (zwei identische kurze Töne kurz vor dem Phasenwechsel).
+      // Der dritte, unterscheidbare Ton kommt weiter unten in wechsleZurNaechstenPhase,
+      // sobald verbleibendeSekunden 0 erreicht - das ist der tatsächliche Phasenwechsel.
+      if (stehtNormalerPhasenwechselBevor() && VORWARN_SEKUNDEN.includes(verbleibendeSekunden)) {
+        spieleWarnton();
+      }
 
       if (verbleibendeSekunden <= 0) {
         wechsleZurNaechstenPhase();
@@ -462,6 +669,8 @@
     // Wird aufgerufen, sobald eine Phase (Übung oder Pause) abgelaufen ist,
     // und entscheidet, wie es weitergeht.
     function wechsleZurNaechstenPhase() {
+      const beendetePhase = aktuellePhase; // merken, welche Phase hier gerade endet
+
       if (aktuellePhase === "uebung") {
         // Die Übung ist vorbei. War das schon die letzte Runde? Dann ist keine
         // weitere Pause mehr nötig -> Training direkt beenden.
@@ -472,16 +681,18 @@
         // Sonst folgt die Pause dieser Runde
         aktuellePhase = "pause";
         verbleibendeSekunden = holeZahlAusEingabe(pauseDauerEingabe, 1);
+        aktuellePhaseDauer = verbleibendeSekunden; // für den Fortschrittsring
       } else {
         // Die Pause ist vorbei -> nächste Runde beginnt mit einer neuen Übungsphase
         aktuelleRunde++;
         aktuellePhase = "uebung";
         verbleibendeSekunden = holeZahlAusEingabe(uebungDauerEingabe, 1);
+        aktuellePhaseDauer = verbleibendeSekunden; // für den Fortschrittsring
       }
 
       aktualisiereAnzeige();
       aktualisierePhaseAnzeige();
-      spielePhasenwechselSignal(); // Phase 3: Ton + Vibration bei jedem Phasenwechsel
+      spielePhasenwechselSignal(beendetePhase); // Sound + Vibration, abhängig von der beendeten Phase
     }
 
     // Phase 2: Wird aufgerufen, wenn alle Runden abgeschlossen sind
@@ -532,6 +743,7 @@
       aktuellePhase = "uebung";
       aktuelleRunde = 1;
       verbleibendeSekunden = holeZahlAusEingabe(uebungDauerEingabe, 1);
+      aktuellePhaseDauer = verbleibendeSekunden; // für den Fortschrittsring
 
       aktualisiereAnzeige();
       aktualisierePhaseAnzeige();
@@ -542,10 +754,18 @@
       eingabenAktivieren(true);
     }
 
+    // Schaltet den Lautlos-Modus um und aktualisiert Beschriftung/Optik des Buttons
+    function schalteStummUm() {
+      stummgeschaltet = !stummgeschaltet;
+      stummButton.textContent = stummgeschaltet ? "🔇 Stumm" : "🔈 Ton an";
+      stummButton.classList.toggle("stumm-aktiv", stummgeschaltet);
+    }
+
     // ---- Buttons mit den Funktionen verknüpfen ----
     startButton.addEventListener("click", starteTimer);
     pauseButton.addEventListener("click", pausiereTimer);
     resetButton.addEventListener("click", setzeZurueck);
+    stummButton.addEventListener("click", schalteStummUm);
 
     // Wenn der Nutzer eine Einstellung ändert (bevor der Timer läuft), Anzeige direkt aktualisieren
     uebungDauerEingabe.addEventListener("input", function () {
