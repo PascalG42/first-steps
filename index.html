@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>Intervalltimer</title>
+<!-- PWA: Manifest verknuepfen, damit Chrome auf Android die App als installierbar erkennt -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#204e6f">
 <style>
   /* Grundlegendes Layout: alles zentriert auf der Seite */
   body {
@@ -792,6 +795,17 @@
 
     // Beim Laden der Seite die Anzeige einmal initialisieren
     setzeZurueck();
+
+    // PWA: Service Worker registrieren, damit die App offline funktioniert und auf
+    // Android ueber Chrome installierbar wird. Der Check "in navigator" sorgt dafuer,
+    // dass nichts passiert, falls ein Browser Service Worker gar nicht unterstuetzt.
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function (fehler) {
+          console.log("Service Worker konnte nicht registriert werden:", fehler);
+        });
+      });
+    }
   </script>
 
 </body>
