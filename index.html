@@ -15,15 +15,35 @@
     justify-content: center;
     height: 100vh;
     margin: 0;
+    /* Sanfter Übergang, wenn sich die Hintergrundfarbe je nach Phase ändert */
+    transition: background-color 0.4s ease;
+  }
+
+  /* Phase 2: Hintergrundfarbe zeigt, ob gerade "Übung" oder "Pause" aktiv ist */
+  body.phase-uebung {
+    background-color: #7a1f1f; /* warmes Rot = Anstrengung */
+  }
+
+  body.phase-pause {
+    background-color: #1f4d3a; /* beruhigendes Grün = Erholung */
   }
 
   h1 {
     margin-bottom: 20px;
   }
 
-  /* Eingabefeld für die Dauer */
+  /* Eingabebereich: die drei Einstellungsfelder nebeneinander */
   #eingabe-bereich {
+    display: flex;
+    gap: 20px;
     margin-bottom: 20px;
+  }
+
+  .eingabe-feld {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
   }
 
   input[type="number"] {
@@ -33,6 +53,21 @@
     text-align: center;
     border-radius: 6px;
     border: none;
+  }
+
+  /* Zeigt die aktuelle Phase als Text (z.B. "ÜBUNG" oder "PAUSE") */
+  #phase-anzeige {
+    font-size: 28px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+  }
+
+  /* Zeigt den Rundenfortschritt, z.B. "Runde 3 von 5" */
+  #runden-anzeige {
+    font-size: 20px;
+    margin-bottom: 10px;
+    opacity: 0.85;
   }
 
   /* Die große Countdown-Anzeige */
@@ -64,7 +99,7 @@
     cursor: not-allowed;
   }
 
-  /* Wird angezeigt, wenn der Timer abgelaufen ist */
+  /* Wird angezeigt, wenn das Training abgelaufen ist */
   #fertig-meldung {
     font-size: 24px;
     color: #7CFC00;
@@ -77,12 +112,28 @@
   <h1>Intervalltimer</h1>
 
   <div id="eingabe-bereich">
-    <label for="dauer-eingabe">Dauer in Sekunden:</label>
-    <input type="number" id="dauer-eingabe" value="60" min="1">
+    <div class="eingabe-feld">
+      <label for="uebung-dauer-eingabe">Übung (Sek.)</label>
+      <input type="number" id="uebung-dauer-eingabe" value="30" min="1">
+    </div>
+    <div class="eingabe-feld">
+      <label for="pause-dauer-eingabe">Pause (Sek.)</label>
+      <input type="number" id="pause-dauer-eingabe" value="15" min="1">
+    </div>
+    <div class="eingabe-feld">
+      <label for="runden-eingabe">Runden</label>
+      <input type="number" id="runden-eingabe" value="5" min="1">
+    </div>
   </div>
 
+  <!-- Zeigt an, ob gerade "Übung" oder "Pause" läuft -->
+  <div id="phase-anzeige">ÜBUNG</div>
+
+  <!-- Zeigt den Rundenfortschritt an -->
+  <div id="runden-anzeige">Runde 1 von 5</div>
+
   <!-- Hier wird der Countdown groß angezeigt -->
-  <div id="anzeige">00:60</div>
+  <div id="anzeige">00:30</div>
 
   <div id="fertig-meldung"></div>
 
@@ -95,20 +146,42 @@
   <script>
     // ---- Variablen, die den Zustand des Timers speichern ----
 
-    // verbleibende Sekunden, die aktuell auf der Uhr stehen
-    let verbleibendeSekunden = 60;
+    // verbleibende Sekunden der aktuell laufenden Phase (Übung oder Pause)
+    let verbleibendeSekunden = 30;
 
     // die ID des laufenden Intervalls (wird von setInterval zurückgegeben).
     // Wir brauchen sie, um den Timer später wieder stoppen zu können (clearInterval).
     let intervallId = null;
 
+    // Phase 2: welche Phase ist gerade aktiv? "uebung" oder "pause"
+    let aktuellePhase = "uebung";
+
+    // Phase 2: in welcher Runde befinden wir uns gerade (beginnt bei 1)
+    let aktuelleRunde = 1;
+
+    // Phase 2: wie viele Runden sollen insgesamt trainiert werden (wird aus der Eingabe gelesen)
+    let gesamtRunden = 5;
+
     // ---- Referenzen auf die HTML-Elemente holen ----
-    const dauerEingabe = document.getElementById("dauer-eingabe");
+    const uebungDauerEingabe = document.getElementById("uebung-dauer-eingabe");
+    const pauseDauerEingabe = document.getElementById("pause-dauer-eingabe");
+    const rundenEingabe = document.getElementById("runden-eingabe");
+    const phaseAnzeige = document.getElementById("phase-anzeige");
+    const rundenAnzeige = document.getElementById("runden-anzeige");
     const anzeige = document.getElementById("anzeige");
     const fertigMeldung = document.getElementById("fertig-meldung");
     const startButton = document.getElementById("start-button");
     const pauseButton = document.getElementById("pause-button");
     const resetButton = document.getElementById("reset-button");
+
+    // Liest eine Zahl aus einem Eingabefeld und sorgt dafür, dass sie mindestens "minimum" ist
+    function holeZahlAusEingabe(element, minimum) {
+      let wert = parseInt(element.value, 10);
+      if (isNaN(wert) || wert < minimum) {
+        wert = minimum;
+      }
+      return wert;
+    }
 
     // Wandelt eine Anzahl Sekunden in das Format "MM:SS" um, z.B. 75 -> "01:15"
     function formatiereZeit(sekundenGesamt) {
@@ -125,19 +198,70 @@
       anzeige.textContent = formatiereZeit(verbleibendeSekunden);
     }
 
+    // Phase 2: Aktualisiert Phasentext, Rundentext und die Hintergrundfarbe passend zur aktuellen Phase
+    function aktualisierePhaseAnzeige() {
+      if (aktuellePhase === "uebung") {
+        phaseAnzeige.textContent = "ÜBUNG";
+        document.body.classList.remove("phase-pause");
+        document.body.classList.add("phase-uebung");
+      } else {
+        phaseAnzeige.textContent = "PAUSE";
+        document.body.classList.remove("phase-uebung");
+        document.body.classList.add("phase-pause");
+      }
+      rundenAnzeige.textContent = "Runde " + aktuelleRunde + " von " + gesamtRunden;
+    }
+
+    // Aktiviert oder deaktiviert die drei Eingabefelder (z.B. gesperrt, solange der Timer läuft)
+    function eingabenAktivieren(aktiv) {
+      uebungDauerEingabe.disabled = !aktiv;
+      pauseDauerEingabe.disabled = !aktiv;
+      rundenEingabe.disabled = !aktiv;
+    }
+
     // Wird jede Sekunde aufgerufen, solange der Timer läuft
     function timerSchritt() {
       verbleibendeSekunden--;
       aktualisiereAnzeige();
 
       if (verbleibendeSekunden <= 0) {
-        // Timer ist fertig: Intervall stoppen und Meldung anzeigen
-        clearInterval(intervallId);
-        intervallId = null;
-        fertigMeldung.textContent = "Zeit abgelaufen!";
-        startButton.disabled = false;
-        pauseButton.disabled = true;
+        wechsleZurNaechstenPhase();
       }
+    }
+
+    // Phase 2: Kernstück der Mehrphasen-Logik.
+    // Wird aufgerufen, sobald eine Phase (Übung oder Pause) abgelaufen ist,
+    // und entscheidet, wie es weitergeht.
+    function wechsleZurNaechstenPhase() {
+      if (aktuellePhase === "uebung") {
+        // Die Übung ist vorbei. War das schon die letzte Runde? Dann ist keine
+        // weitere Pause mehr nötig -> Training direkt beenden.
+        if (aktuelleRunde >= gesamtRunden) {
+          beendeTraining();
+          return;
+        }
+        // Sonst folgt die Pause dieser Runde
+        aktuellePhase = "pause";
+        verbleibendeSekunden = holeZahlAusEingabe(pauseDauerEingabe, 1);
+      } else {
+        // Die Pause ist vorbei -> nächste Runde beginnt mit einer neuen Übungsphase
+        aktuelleRunde++;
+        aktuellePhase = "uebung";
+        verbleibendeSekunden = holeZahlAusEingabe(uebungDauerEingabe, 1);
+      }
+
+      aktualisiereAnzeige();
+      aktualisierePhaseAnzeige();
+    }
+
+    // Phase 2: Wird aufgerufen, wenn alle Runden abgeschlossen sind
+    function beendeTraining() {
+      clearInterval(intervallId);
+      intervallId = null;
+      fertigMeldung.textContent = "Training abgeschlossen!";
+      startButton.disabled = false;
+      pauseButton.disabled = true;
+      eingabenAktivieren(true);
     }
 
     // Startet den Countdown
@@ -147,20 +271,17 @@
         return;
       }
 
-      // Beim allerersten Start (Anzeige steht noch auf dem Eingabewert) die Eingabe übernehmen
-      if (fertigMeldung.textContent !== "") {
-        fertigMeldung.textContent = "";
-      }
+      fertigMeldung.textContent = "";
 
       // setInterval ruft timerSchritt() alle 1000 Millisekunden (= 1 Sekunde) auf
       intervallId = setInterval(timerSchritt, 1000);
 
       startButton.disabled = true;
       pauseButton.disabled = false;
-      dauerEingabe.disabled = true; // während der Timer läuft, keine Änderung der Dauer erlauben
+      eingabenAktivieren(false); // während der Timer läuft, keine Änderung der Einstellungen erlauben
     }
 
-    // Pausiert den Countdown, ohne die verbleibende Zeit zu verlieren
+    // Pausiert den Countdown, ohne die verbleibende Zeit oder Runde zu verlieren
     function pausiereTimer() {
       clearInterval(intervallId);
       intervallId = null;
@@ -169,24 +290,24 @@
       pauseButton.disabled = true;
     }
 
-    // Setzt den Timer auf die eingegebene Dauer zurück
+    // Setzt den Timer auf die eingegebenen Einstellungen zurück (Runde 1, Phase "Übung")
     function setzeZurueck() {
       clearInterval(intervallId);
       intervallId = null;
 
-      // Eingegebene Dauer lesen (mindestens 1 Sekunde)
-      let eingabeWert = parseInt(dauerEingabe.value, 10);
-      if (isNaN(eingabeWert) || eingabeWert < 1) {
-        eingabeWert = 1;
-      }
+      // Einstellungen neu aus den Eingabefeldern lesen (mindestens 1)
+      gesamtRunden = holeZahlAusEingabe(rundenEingabe, 1);
+      aktuellePhase = "uebung";
+      aktuelleRunde = 1;
+      verbleibendeSekunden = holeZahlAusEingabe(uebungDauerEingabe, 1);
 
-      verbleibendeSekunden = eingabeWert;
       aktualisiereAnzeige();
+      aktualisierePhaseAnzeige();
 
       fertigMeldung.textContent = "";
       startButton.disabled = false;
       pauseButton.disabled = true;
-      dauerEingabe.disabled = false;
+      eingabenAktivieren(true);
     }
 
     // ---- Buttons mit den Funktionen verknüpfen ----
@@ -194,8 +315,18 @@
     pauseButton.addEventListener("click", pausiereTimer);
     resetButton.addEventListener("click", setzeZurueck);
 
-    // Wenn der Nutzer die Dauer ändert (bevor der Timer läuft), Anzeige direkt aktualisieren
-    dauerEingabe.addEventListener("input", function () {
+    // Wenn der Nutzer eine Einstellung ändert (bevor der Timer läuft), Anzeige direkt aktualisieren
+    uebungDauerEingabe.addEventListener("input", function () {
+      if (intervallId === null) {
+        setzeZurueck();
+      }
+    });
+    pauseDauerEingabe.addEventListener("input", function () {
+      if (intervallId === null) {
+        setzeZurueck();
+      }
+    });
+    rundenEingabe.addEventListener("input", function () {
       if (intervallId === null) {
         setzeZurueck();
       }
