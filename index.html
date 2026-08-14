@@ -70,10 +70,16 @@
     font-size: clamp(28px, 7vw, 40px);
   }
 
-  /* Eingabebereich: die drei Einstellungsfelder nebeneinander */
+  /* Eingabebereich: die drei Einstellungsfelder nebeneinander, jetzt so breit wie die
+     restlichen Bereiche (nutzt fast die gesamte Bildschirmbreite). Jedes Feld nimmt
+     über flex:1 gleich viel Platz ein, das Eingabefeld selbst füllt sein Feld über
+     width:100% komplett aus, statt eine feste, kleine Breite zu haben. */
   #eingabe-bereich {
     display: flex;
-    gap: clamp(16px, 4vw, 28px);
+    /* Untergrenze bewusst nicht zu klein, damit die drei Felder auch bei voller
+       Breite immer klar als getrennte Felder erkennbar bleiben */
+    gap: clamp(20px, 4vw, 28px);
+    width: clamp(300px, 90vw, 460px);
   }
 
   .eingabe-feld {
@@ -81,22 +87,23 @@
     flex-direction: column;
     align-items: center;
     gap: 5px;
+    flex: 1;
+    min-width: 0; /* verhindert Overflow der Felder auf sehr schmalen Bildschirmen */
   }
 
   .eingabe-feld label {
-    font-size: clamp(14px, 3.5vw, 18px);
+    font-size: clamp(15px, 4vw, 20px);
   }
 
   input[type="number"] {
-    width: clamp(70px, 18vw, 100px);
-    padding: clamp(8px, 2vw, 12px);
-    font-size: clamp(16px, 4vw, 22px);
+    width: 100%;
+    padding: clamp(10px, 2.5vw, 14px);
+    font-size: clamp(18px, 5vw, 26px);
     text-align: center;
     border-radius: 6px;
     border: none;
   }
 
-  /* Zeigt die aktuelle Phase als Text (z.B. "ÜBUNG" oder "PAUSE") */
   /* Hält Phasen- und Rundenanzeige eng zusammen (kleiner, fester Abstand statt des
      großen #inhalt-Zwischenraums) */
   #status-anzeige {
@@ -201,6 +208,19 @@
     cursor: pointer;
     background-color: #37424f;
     color: white;
+    /* Zentriert den Inhalt (Text oder Icon) sauber in der Mitte des Buttons */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Icons in Buttons: 1em groß, folgen also automatisch der font-size des jeweiligen
+     Buttons (inkl. dessen clamp()-Skalierung) - "currentColor" lässt das Icon dabei
+     immer die aktuelle Textfarbe des Buttons annehmen */
+  button svg {
+    width: 1em;
+    height: 1em;
+    display: block;
   }
 
   /* Start/Pause/Zurücksetzen als reine Symbol-Buttons in einer Dreier-Reihe (der
@@ -319,8 +339,14 @@
 </head>
 <body>
 
-  <!-- Ton-Symbol: fest oben rechts, unabhängig vom Layout darunter (siehe CSS) -->
-  <button id="stumm-button">🔈</button>
+  <!-- Ton-Symbol: fest oben rechts, unabhängig vom Layout darunter (siehe CSS).
+       Der Inhalt (Lautsprecher-Icon) wird per JS ausgetauscht, siehe schalteStummUm(). -->
+  <button id="stumm-button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"></polygon>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+    </svg>
+  </button>
 
   <!-- Umhüllt den gesamten Inhalt als vertikal zentrierten Block (siehe #inhalt im CSS) -->
   <div id="inhalt">
@@ -365,11 +391,31 @@
 
     <div id="fertig-meldung"></div>
 
-    <!-- Start/Pause/Zurücksetzen als reine Symbol-Buttons in einer Dreier-Reihe -->
+    <!-- Start/Pause/Zurücksetzen als reine Symbol-Buttons in einer Dreier-Reihe.
+         Icons als Inline-SVG statt Emoji, damit sie auf allen Geräten einheitlich
+         aussehen (keine externe Icon-Bibliothek nötig - die Pfade sind fest hier drin). -->
     <div id="button-bereich">
-      <button id="start-button">▶️</button>
-      <button id="pause-button" disabled>⏸️</button>
-      <button id="reset-button">🔄</button>
+      <button id="start-button">
+        <!-- Play-Dreieck -->
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+      </button>
+      <button id="pause-button" disabled>
+        <!-- Zwei Pause-Balken -->
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <rect x="6" y="4" width="4" height="16"></rect>
+          <rect x="14" y="4" width="4" height="16"></rect>
+        </svg>
+      </button>
+      <button id="reset-button">
+        <!-- Kreisförmiger Reset-/Neuladen-Pfeil -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -854,9 +900,25 @@
 
     // Schaltet den Lautlos-Modus um und aktualisiert Symbol/Optik des Buttons
     // (reines Symbol statt Text: 🔈 = Ton an, 🔇 = durchgestrichen/stumm)
+    // Die beiden SVG-Icons für den Ton-Button (Lautsprecher an / durchgestrichen).
+    // Werden per innerHTML eingesetzt, da es zwei verschiedene Icons sind (kein
+    // einzelnes Zeichen wie bei textContent).
+    const SYMBOL_TON_AN =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"></polygon>' +
+      '<path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>' +
+      "</svg>";
+
+    const SYMBOL_TON_AUS =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"></polygon>' +
+      '<line x1="23" y1="9" x2="17" y2="15"></line>' +
+      '<line x1="17" y1="9" x2="23" y2="15"></line>' +
+      "</svg>";
+
     function schalteStummUm() {
       stummgeschaltet = !stummgeschaltet;
-      stummButton.textContent = stummgeschaltet ? "🔇" : "🔈";
+      stummButton.innerHTML = stummgeschaltet ? SYMBOL_TON_AUS : SYMBOL_TON_AN;
       stummButton.classList.toggle("stumm-aktiv", stummgeschaltet);
     }
 
