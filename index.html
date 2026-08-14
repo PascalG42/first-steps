@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Intervalltimer</title>
+<style>
+  /* Grundlegendes Layout: alles zentriert auf der Seite */
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #1e1e2f;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+  }
+
+  /* Eingabefeld für die Dauer */
+  #eingabe-bereich {
+    margin-bottom: 20px;
+  }
+
+  input[type="number"] {
+    width: 80px;
+    padding: 8px;
+    font-size: 18px;
+    text-align: center;
+    border-radius: 6px;
+    border: none;
+  }
+
+  /* Die große Countdown-Anzeige */
+  #anzeige {
+    font-size: 100px;
+    font-weight: bold;
+    margin: 20px 0;
+    font-variant-numeric: tabular-nums; /* Ziffern bleiben gleich breit, kein "Wackeln" */
+  }
+
+  /* Buttons */
+  button {
+    font-size: 18px;
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: #4a4a6a;
+    color: white;
+  }
+
+  button:hover {
+    background-color: #6a6a9a;
+  }
+
+  button:disabled {
+    background-color: #333344;
+    cursor: not-allowed;
+  }
+
+  /* Wird angezeigt, wenn der Timer abgelaufen ist */
+  #fertig-meldung {
+    font-size: 24px;
+    color: #7CFC00;
+    height: 30px;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Intervalltimer</h1>
+
+  <div id="eingabe-bereich">
+    <label for="dauer-eingabe">Dauer in Sekunden:</label>
+    <input type="number" id="dauer-eingabe" value="60" min="1">
+  </div>
+
+  <!-- Hier wird der Countdown groß angezeigt -->
+  <div id="anzeige">00:60</div>
+
+  <div id="fertig-meldung"></div>
+
+  <div id="button-bereich">
+    <button id="start-button">Start</button>
+    <button id="pause-button" disabled>Pause</button>
+    <button id="reset-button">Zurücksetzen</button>
+  </div>
+
+  <script>
+    // ---- Variablen, die den Zustand des Timers speichern ----
+
+    // verbleibende Sekunden, die aktuell auf der Uhr stehen
+    let verbleibendeSekunden = 60;
+
+    // die ID des laufenden Intervalls (wird von setInterval zurückgegeben).
+    // Wir brauchen sie, um den Timer später wieder stoppen zu können (clearInterval).
+    let intervallId = null;
+
+    // ---- Referenzen auf die HTML-Elemente holen ----
+    const dauerEingabe = document.getElementById("dauer-eingabe");
+    const anzeige = document.getElementById("anzeige");
+    const fertigMeldung = document.getElementById("fertig-meldung");
+    const startButton = document.getElementById("start-button");
+    const pauseButton = document.getElementById("pause-button");
+    const resetButton = document.getElementById("reset-button");
+
+    // Wandelt eine Anzahl Sekunden in das Format "MM:SS" um, z.B. 75 -> "01:15"
+    function formatiereZeit(sekundenGesamt) {
+      const minuten = Math.floor(sekundenGesamt / 60);
+      const sekunden = sekundenGesamt % 60;
+      // padStart(2, "0") sorgt dafür, dass immer zwei Ziffern angezeigt werden (z.B. "05" statt "5")
+      const minutenText = String(minuten).padStart(2, "0");
+      const sekundenText = String(sekunden).padStart(2, "0");
+      return minutenText + ":" + sekundenText;
+    }
+
+    // Aktualisiert die große Anzeige mit dem aktuellen Wert von verbleibendeSekunden
+    function aktualisiereAnzeige() {
+      anzeige.textContent = formatiereZeit(verbleibendeSekunden);
+    }
+
+    // Wird jede Sekunde aufgerufen, solange der Timer läuft
+    function timerSchritt() {
+      verbleibendeSekunden--;
+      aktualisiereAnzeige();
+
+      if (verbleibendeSekunden <= 0) {
+        // Timer ist fertig: Intervall stoppen und Meldung anzeigen
+        clearInterval(intervallId);
+        intervallId = null;
+        fertigMeldung.textContent = "Zeit abgelaufen!";
+        startButton.disabled = false;
+        pauseButton.disabled = true;
+      }
+    }
+
+    // Startet den Countdown
+    function starteTimer() {
+      // Falls schon ein Timer läuft, nichts tun (verhindert doppelte Intervalle)
+      if (intervallId !== null) {
+        return;
+      }
+
+      // Beim allerersten Start (Anzeige steht noch auf dem Eingabewert) die Eingabe übernehmen
+      if (fertigMeldung.textContent !== "") {
+        fertigMeldung.textContent = "";
+      }
+
+      // setInterval ruft timerSchritt() alle 1000 Millisekunden (= 1 Sekunde) auf
+      intervallId = setInterval(timerSchritt, 1000);
+
+      startButton.disabled = true;
+      pauseButton.disabled = false;
+      dauerEingabe.disabled = true; // während der Timer läuft, keine Änderung der Dauer erlauben
+    }
+
+    // Pausiert den Countdown, ohne die verbleibende Zeit zu verlieren
+    function pausiereTimer() {
+      clearInterval(intervallId);
+      intervallId = null;
+
+      startButton.disabled = false;
+      pauseButton.disabled = true;
+    }
+
+    // Setzt den Timer auf die eingegebene Dauer zurück
+    function setzeZurueck() {
+      clearInterval(intervallId);
+      intervallId = null;
+
+      // Eingegebene Dauer lesen (mindestens 1 Sekunde)
+      let eingabeWert = parseInt(dauerEingabe.value, 10);
+      if (isNaN(eingabeWert) || eingabeWert < 1) {
+        eingabeWert = 1;
+      }
+
+      verbleibendeSekunden = eingabeWert;
+      aktualisiereAnzeige();
+
+      fertigMeldung.textContent = "";
+      startButton.disabled = false;
+      pauseButton.disabled = true;
+      dauerEingabe.disabled = false;
+    }
+
+    // ---- Buttons mit den Funktionen verknüpfen ----
+    startButton.addEventListener("click", starteTimer);
+    pauseButton.addEventListener("click", pausiereTimer);
+    resetButton.addEventListener("click", setzeZurueck);
+
+    // Wenn der Nutzer die Dauer ändert (bevor der Timer läuft), Anzeige direkt aktualisieren
+    dauerEingabe.addEventListener("input", function () {
+      if (intervallId === null) {
+        setzeZurueck();
+      }
+    });
+
+    // Beim Laden der Seite die Anzeige einmal initialisieren
+    setzeZurueck();
+  </script>
+
+</body>
+</html>
