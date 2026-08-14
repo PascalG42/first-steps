@@ -162,6 +162,11 @@
     // Phase 2: wie viele Runden sollen insgesamt trainiert werden (wird aus der Eingabe gelesen)
     let gesamtRunden = 5;
 
+    // Phase 3: der Audio-Kontext für erzeugte Signaltöne (Web Audio API).
+    // Bleibt anfangs "null" und wird erst beim ersten Start erzeugt (siehe initialisiereAudio),
+    // weil Browser Töne nur nach einer Nutzer-Interaktion erlauben (Klick auf "Start").
+    let audioContext = null;
+
     // ---- Referenzen auf die HTML-Elemente holen ----
     const uebungDauerEingabe = document.getElementById("uebung-dauer-eingabe");
     const pauseDauerEingabe = document.getElementById("pause-dauer-eingabe");
@@ -219,6 +224,61 @@
       rundenEingabe.disabled = !aktiv;
     }
 
+    // ---- Phase 3: akustische und haptische Signale ----
+
+    // Erzeugt den Audio-Kontext einmalig. Muss innerhalb eines Klicks aufgerufen werden
+    // (z.B. beim Start-Button), sonst blockieren Browser die Tonausgabe.
+    function initialisiereAudio() {
+      if (audioContext === null) {
+        // "webkitAudioContext" ist ein Fallback für ältere Safari-Versionen
+        const AudioContextKlasse = window.AudioContext || window.webkitAudioContext;
+        audioContext = new AudioContextKlasse();
+      }
+    }
+
+    // Erzeugt einen kurzen Signalton über die Web Audio API (kein Audio-File nötig).
+    // frequenz = Tonhöhe in Hertz, dauerSekunden = wie lange der Ton klingt.
+    function spieleTon(frequenz, dauerSekunden) {
+      if (audioContext === null) {
+        return; // Audio wurde noch nicht initialisiert (z.B. vor dem ersten Start)
+      }
+
+      const oszillator = audioContext.createOscillator(); // erzeugt die eigentliche Tonwelle
+      const lautstaerkeRegler = audioContext.createGain(); // steuert die Lautstärke über die Zeit
+
+      oszillator.frequency.value = frequenz;
+      oszillator.connect(lautstaerkeRegler);
+      lautstaerkeRegler.connect(audioContext.destination);
+
+      // Lautstärke sanft ausklingen lassen, damit der Ton nicht abrupt "klickt"
+      lautstaerkeRegler.gain.setValueAtTime(0.3, audioContext.currentTime);
+      lautstaerkeRegler.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + dauerSekunden);
+
+      oszillator.start();
+      oszillator.stop(audioContext.currentTime + dauerSekunden);
+    }
+
+    // Löst eine kurze Vibration aus, falls der Browser das unterstützt (z.B. Android/Chrome).
+    // Auf Geräten/Browsern ohne Unterstützung (z.B. iOS Safari) passiert einfach nichts.
+    function vibriere(muster) {
+      if (navigator.vibrate) {
+        navigator.vibrate(muster);
+      }
+    }
+
+    // Signal bei einem normalen Phasenwechsel (Übung -> Pause oder Pause -> Übung)
+    function spielePhasenwechselSignal() {
+      spieleTon(880, 0.15); // kurzer, hoher Ton
+      vibriere(200); // einzelne kurze Vibration (200ms)
+    }
+
+    // Signal, wenn das gesamte Training (alle Runden) abgeschlossen ist.
+    // Bewusst länger/tiefer als der normale Phasenwechsel-Ton, damit er sich klar unterscheidet.
+    function spieleEndSignal() {
+      spieleTon(440, 0.6); // längerer, tieferer Ton
+      vibriere([200, 100, 200, 100, 200]); // mehrfaches Vibrationsmuster
+    }
+
     // Wird jede Sekunde aufgerufen, solange der Timer läuft
     function timerSchritt() {
       verbleibendeSekunden--;
@@ -252,12 +312,14 @@
 
       aktualisiereAnzeige();
       aktualisierePhaseAnzeige();
+      spielePhasenwechselSignal(); // Phase 3: Ton + Vibration bei jedem Phasenwechsel
     }
 
     // Phase 2: Wird aufgerufen, wenn alle Runden abgeschlossen sind
     function beendeTraining() {
       clearInterval(intervallId);
       intervallId = null;
+      spieleEndSignal(); // Phase 3: eigenes Signal für das Trainingsende
       fertigMeldung.textContent = "Training abgeschlossen!";
       startButton.disabled = false;
       pauseButton.disabled = true;
@@ -272,6 +334,7 @@
       }
 
       fertigMeldung.textContent = "";
+      initialisiereAudio(); // Phase 3: Audio hier starten, da wir gerade in einem Klick-Handler sind
 
       // setInterval ruft timerSchritt() alle 1000 Millisekunden (= 1 Sekunde) auf
       intervallId = setInterval(timerSchritt, 1000);
