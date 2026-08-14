@@ -97,6 +97,10 @@
 
   input[type="number"] {
     width: 100%;
+    /* border-box: Padding wird in die 100%-Breite eingerechnet statt zusätzlich
+       dazuaddiert zu werden - sonst würde jedes Feld über seinen zugewiesenen Platz
+       hinausragen und in den Abstand zum Nachbarfeld hineinlaufen */
+    box-sizing: border-box;
     padding: clamp(10px, 2.5vw, 14px);
     font-size: clamp(18px, 5vw, 26px);
     text-align: center;
@@ -239,6 +243,7 @@
     /* Der Grid-"gap" übernimmt den Abstand, deshalb hier kein zusätzlicher Button-Rand */
     margin: 0;
     width: 100%;
+    box-sizing: border-box; /* Padding zählt zur Breite dazu statt sie zu vergrößern */
     /* Große Symbol-Schrift statt Text, quadratisch für eine gut tippbare Fläche */
     font-size: clamp(28px, 8vw, 40px);
     padding: clamp(16px, 5vw, 22px) 0;
@@ -295,6 +300,7 @@
 
   #preset-name-eingabe {
     flex: 1;
+    box-sizing: border-box; /* Padding zählt zur Breite dazu statt sie zu vergrößern */
     padding: clamp(8px, 2vw, 11px);
     border-radius: 6px;
     border: none;
