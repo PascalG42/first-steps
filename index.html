@@ -471,6 +471,20 @@
       ringFortschritt.style.strokeDashoffset = versatz;
     }
 
+    // Beendet eine gerade laufende Ring-Animation sofort, statt sie (bis zu 1 Sekunde
+    // lang) zu Ende gleiten zu lassen. Wird bei Pause und Zurücksetzen gebraucht, damit
+    // der Ring exakt im selben Moment stehen bleibt wie die Zahl, statt sichtbar
+    // nachzuziehen. Trick: die CSS-transition kurz deaktivieren (dadurch springt der
+    // Ring sofort zu seinem aktuellen Zielwert), einen Reflow erzwingen (der
+    // Lesezugriff auf getBoundingClientRect sorgt dafür, dass "none" auch wirklich
+    // angewendet wird) und die Transition danach wieder aktivieren, damit künftige
+    // Änderungen erneut weich animieren.
+    function stoppeRingAnimationSofort() {
+      ringFortschritt.style.transition = "none";
+      void ringFortschritt.getBoundingClientRect();
+      ringFortschritt.style.transition = "";
+    }
+
     // Phase 2: Aktualisiert Phasentext, Rundentext und die Hintergrundfarbe passend zur aktuellen Phase
     function aktualisierePhaseAnzeige() {
       if (aktuellePhase === "uebung") {
@@ -776,6 +790,7 @@
     function pausiereTimer() {
       clearInterval(intervallId);
       intervallId = null;
+      stoppeRingAnimationSofort(); // Ring friert sofort an der aktuellen Stelle ein
 
       startButton.disabled = false;
       pauseButton.disabled = true;
@@ -795,6 +810,7 @@
 
       aktualisiereAnzeige();
       aktualisierePhaseAnzeige();
+      stoppeRingAnimationSofort(); // Ring springt sofort auf den zurückgesetzten Stand, statt hinzugleiten
 
       fertigMeldung.textContent = "";
       startButton.disabled = false;
