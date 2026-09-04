@@ -136,6 +136,13 @@
     background-color: #8a5f33;
   }
 
+  /* Phase 10: Der Vorlauf zu Beginn des Trainings. Bewusst ein zurückhaltendes
+     Blaugrau - es signalisiert "läuft noch nicht", statt schon nach Übung (Blau) oder
+     Pause (Grün) auszusehen. Weißer Text erreicht darauf rund 7.9:1 Kontrast. */
+  body.phase-vorbereitung {
+    background-color: #46525f;
+  }
+
   h1 {
     margin: 0;
     font-size: clamp(28px, 7vw, 40px);
@@ -621,6 +628,10 @@
     stroke: #f4d9b4;
   }
 
+  body.phase-vorbereitung #ring-fortschritt {
+    stroke: #cbd5e0;
+  }
+
   /* Die große Countdown-Anzeige, jetzt mittig über dem Ring platziert */
   #anzeige {
     position: absolute;
@@ -972,6 +983,12 @@
     // Die zuletzt im freien Modus eingestellten Werte
     const FREIER_MODUS_SCHLUESSEL = "intervalltimer-frei";
 
+    // Phase 10: Vorlauf zu Beginn jedes Trainings, um in Position zu kommen. Da eine
+    // Kachel unmittelbar startet, würde die erste Übung sonst schon laufen, während man
+    // das Handy noch ablegt. In den letzten drei Sekunden ertönt der übliche
+    // Vorwarn-Countdown, danach beginnt die erste Übung.
+    const VORBEREITUNG_SEKUNDEN = 5;
+
     // Phase 9: alle gespeicherten Routinen - das sind gleichzeitig die Kacheln auf dem
     // Startbildschirm, z.B.
     // [{ name: "Dehnroutine Morgen", uebungen: [...], pauseDauer: 15, seitenwechselDauer: 5 }, ...]
@@ -1101,6 +1118,14 @@
       }, 0);
     }
 
+    // Dieselbe Summe, aber einschließlich des Vorlaufs, den jedes Training vorangestellt
+    // bekommt (siehe mitVorbereitung). Wird überall dort verwendet, wo dem Nutzer eine
+    // Gesamtdauer angezeigt wird - sonst stünde auf der Kachel eine Zeit, die um den
+    // Vorlauf zu kurz wäre.
+    function gesamtdauerMitVorlauf(plan) {
+      return berechneGesamtdauer(mitVorbereitung(plan));
+    }
+
     // Anzeigename einer Übung: der eingegebene Name, sonst ersatzweise "Übung 3"
     function beschriftungFuer(abschnitt) {
       const name = (abschnitt.name || "").trim();
@@ -1186,14 +1211,17 @@
     // Phase 7b: Setzt genau eine der drei Phasenklassen am <body> - sie steuert
     // Hintergrund- und Ringfarbe (siehe CSS).
     function setzePhasenFarbe(klasse) {
-      document.body.classList.remove("phase-uebung", "phase-pause", "phase-seitenwechsel");
+      document.body.classList.remove("phase-uebung", "phase-pause", "phase-seitenwechsel", "phase-vorbereitung");
       document.body.classList.add(klasse);
     }
 
     function aktualisierePhaseAnzeige() {
       const abschnitt = aktuellerAbschnitt();
 
-      if (abschnitt.typ === "uebung") {
+      if (abschnitt.typ === "vorbereitung") {
+        phaseAnzeige.textContent = "BEREIT MACHEN";
+        setzePhasenFarbe("phase-vorbereitung");
+      } else if (abschnitt.typ === "uebung") {
         // Bei zweiseitigen Übungen zusätzlich anzeigen, welche Seite gerade dran ist
         const seitenZusatz = abschnitt.seite ? " – " + abschnitt.seite.toUpperCase() : "";
         phaseAnzeige.textContent = beschriftungFuer(abschnitt).toUpperCase() + seitenZusatz;
@@ -1340,7 +1368,9 @@
       if (uebungen.length === 0) {
         gesamtdauerAnzeige.textContent = "";
       } else {
-        gesamtdauerAnzeige.textContent = "Gesamt " + formatiereZeit(berechneGesamtdauer(ablaufplanAusEditor()));
+        // Mit Vorlauf gerechnet, damit die Angabe der Zeit entspricht, die das Training
+        // tatsächlich in Anspruch nimmt
+        gesamtdauerAnzeige.textContent = "Gesamt " + formatiereZeit(gesamtdauerMitVorlauf(ablaufplanAusEditor()));
       }
     }
 
@@ -1453,6 +1483,72 @@
       }
     }
 
+    // ---- Phase 10: Bildschirm während des Trainings wachhalten ----
+
+    // Die Screen-Wake-Lock-Schnittstelle des Browsers hält den Bildschirm an, so wie es
+    // eine Video-App tut. Ohne sie schaltet das Handy nach seiner üblichen Zeit ab -
+    // mitten in einer Übung, in der man das Gerät gerade nicht anfasst.
+    //
+    // Zu beachten (deshalb der Aufwand unten):
+    // - Die Schnittstelle gibt es nur über HTTPS. Auf der GitHub-Pages-Adresse ist das
+    //   gegeben; beim Öffnen einer lokalen Datei (file://) fehlt sie, dann bleibt es
+    //   beim bisherigen Verhalten.
+    // - Die Sperre wird vom Browser automatisch aufgehoben, sobald die Seite in den
+    //   Hintergrund gerät. Kommt man zurück, muss sie neu angefordert werden.
+    // - Die Anfrage kann abgelehnt werden, etwa im Energiesparmodus oder bei sehr
+    //   niedrigem Akkustand. Das Training läuft dann trotzdem normal weiter.
+    let bildschirmSperre = null;
+
+    // Solange true, soll der Bildschirm anbleiben - also vom Trainingsstart bis zum
+    // Ende des Trainings oder zum Verlassen der Trainingsansicht. Eine Pause hebt das
+    // bewusst nicht auf: Auch dann will man die Anzeige noch sehen können.
+    let bildschirmSollWachBleiben = false;
+
+    function halteBildschirmWach() {
+      bildschirmSollWachBleiben = true;
+
+      if (!("wakeLock" in navigator) || bildschirmSperre !== null) {
+        return;
+      }
+
+      navigator.wakeLock
+        .request("screen")
+        .then(function (sperre) {
+          bildschirmSperre = sperre;
+          // Der Browser kann die Sperre von sich aus aufheben (z.B. beim Wechsel in den
+          // Hintergrund). Dann die eigene Notiz darüber verwerfen, damit später eine
+          // neue angefordert werden kann.
+          sperre.addEventListener("release", function () {
+            bildschirmSperre = null;
+          });
+        })
+        .catch(function () {
+          // Abgelehnt - siehe Kommentar oben, kein Grund zum Abbruch
+        });
+    }
+
+    function gibBildschirmFrei() {
+      bildschirmSollWachBleiben = false;
+
+      if (bildschirmSperre === null) {
+        return;
+      }
+
+      const sperre = bildschirmSperre;
+      bildschirmSperre = null;
+      sperre.release().catch(function () {
+        // Freigabe fehlgeschlagen - der Browser hebt die Sperre spätestens beim
+        // Verlassen der Seite selbst auf
+      });
+    }
+
+    // Nach der Rückkehr aus dem Hintergrund ist die Sperre weg und wird neu angefordert
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible" && bildschirmSollWachBleiben) {
+        halteBildschirmWach();
+      }
+    });
+
     // ---- Phase 9: Zwischen den Ansichten wechseln ----
 
     // Schaltet die sichtbare Ansicht um. Genau eine der vier Ansichten ist sichtbar;
@@ -1477,6 +1573,13 @@
       // Außerhalb des Trainings darf keine Phasenfarbe stehen bleiben
       if (name !== "training") {
         setzePhasenFarbe("phase-uebung");
+      }
+
+      // Phase 10: Der Bildschirm bleibt nur in der Trainingsansicht an
+      if (name === "training") {
+        halteBildschirmWach();
+      } else {
+        gibBildschirmFrei();
       }
     }
 
@@ -1522,7 +1625,7 @@
         const info = document.createElement("span");
         info.className = "kachel-info";
         const anzahl = routine.uebungen.length;
-        const dauer = berechneGesamtdauer(baueAblaufplan(routine.uebungen, routine.pauseDauer, routine.seitenwechselDauer));
+        const dauer = gesamtdauerMitVorlauf(baueAblaufplan(routine.uebungen, routine.pauseDauer, routine.seitenwechselDauer));
         info.textContent = anzahl + (anzahl === 1 ? " Übung · " : " Übungen · ") + formatiereZeit(dauer);
 
         kachel.appendChild(name);
@@ -1658,6 +1761,26 @@
 
     // ---- Phase 9: Ein Training starten ----
 
+    // Phase 10: Stellt dem Ablauf den Vorbereitungsabschnitt voran. Er übernimmt Nummer,
+    // Name und Seite des ersten Abschnitts, damit die Fortschrittsanzeige während des
+    // Vorlaufs schon zeigt, was als Erstes kommt.
+    function mitVorbereitung(plan) {
+      if (VORBEREITUNG_SEKUNDEN <= 0 || plan.length === 0) {
+        return plan;
+      }
+
+      const erster = plan[0];
+      const vorlauf = {
+        typ: "vorbereitung",
+        dauer: VORBEREITUNG_SEKUNDEN,
+        nummer: erster.nummer,
+        name: erster.name,
+        seite: erster.seite
+      };
+
+      return [vorlauf].concat(plan);
+    }
+
     // Gemeinsamer Einstieg für beide Betriebsarten: übernimmt einen fertigen Ablaufplan,
     // stellt die Trainingsansicht darauf ein und startet den Countdown.
     // anzahl = Nenner der Fortschrittsanzeige, bezeichnung = "Übung" oder "Runde".
@@ -1666,7 +1789,7 @@
         return;
       }
 
-      ablaufplan = plan;
+      ablaufplan = mitVorbereitung(plan);
       gesamtUebungen = anzahl;
       zaehlerBezeichnung = bezeichnung;
       aktuellerAbschnittIndex = 0;
@@ -1722,7 +1845,7 @@
     }
 
     function aktualisiereFreieGesamtdauer() {
-      freiGesamtdauer.textContent = "Gesamt " + formatiereZeit(berechneGesamtdauer(freierPlanAusEingaben()));
+      freiGesamtdauer.textContent = "Gesamt " + formatiereZeit(gesamtdauerMitVorlauf(freierPlanAusEingaben()));
     }
 
     function oeffneFreienModus() {
@@ -1958,6 +2081,8 @@
       pauseButton.disabled = true;
       // Phase 9: Die Ansicht bleibt bewusst stehen, damit die Abschlussmeldung lesbar
       // ist. Zurück zur Übersicht geht es über den Pfeil oben links.
+      // Phase 10: Der Bildschirm darf jetzt wieder von selbst ausgehen.
+      gibBildschirmFrei();
     }
 
     // Startet den Countdown
@@ -1977,6 +2102,10 @@
 
       // setInterval ruft timerSchritt() alle 1000 Millisekunden (= 1 Sekunde) auf
       intervallId = setInterval(timerSchritt, 1000);
+
+      // Phase 10: Auch beim Fortsetzen nach einer Pause oder nach dem Trainingsende
+      // sicherstellen, dass der Bildschirm anbleibt
+      halteBildschirmWach();
 
       startButton.disabled = true;
       pauseButton.disabled = false;

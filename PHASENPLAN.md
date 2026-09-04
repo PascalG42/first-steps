@@ -123,8 +123,25 @@ Die App besteht nicht mehr aus einer langen Seite, sondern aus **vier Ansichten*
 
 **Geprüft:** 60 automatische Prüfungen (headless) über Navigation, leeren Startbildschirm, Anlegen ohne Namen, Anlegen und Ändern, Speicherinhalt, Start per Kachel, Ablauf bis zum Ende, Zurück aus laufendem und beendetem Training, Bearbeiten-Modus, Verwerfen mit und ohne Änderungen, Löschen mit Rückfrage, freier Modus inklusive gemerkter Werte, beschädigte und unvollständige Speicherdaten sowie das Räumen alter Speicherstände. Layout per Screenshot bei 412 px und 360 px.
 
-### Phase 10 – noch offen
-Vorbereitungszeit vor dem Trainingsstart (relevant, weil eine Kachel sofort startet), Pausendauer pro Übung, Import/Export von Routinen, Umsortieren der Kacheln.
+### Phase 10 – Vorlauf und Bildschirm wachhalten ✅ erledigt
+
+**Vorlauf von 5 Sekunden.** Jedes Training beginnt mit einem Abschnitt „BEREIT MACHEN" (eigene, zurückhaltende Blaugrau-Farbe), damit man nach dem Antippen einer Kachel in Position kommt. In den letzten drei Sekunden läuft der übliche Vorwarn-Countdown, danach beginnt die erste Übung mit `start.wav` – also „3, 2, 1, los". Der Vorlauf gilt für Routinen und für den freien Modus.
+
+Umgesetzt als zusätzlicher Abschnitt am Anfang des Ablaufplans (`mitVorbereitung`), der Nummer, Name und Seite des ersten Abschnitts übernimmt – so zeigt die Fortschrittsanzeige während des Vorlaufs schon, was als Erstes kommt. Die Dauer steckt in der Konstante `VORBEREITUNG_SEKUNDEN` und ist bewusst nicht über die Oberfläche einstellbar (nicht gewünscht, hielte den Editor schlank); eine Änderung ist eine Zeile im Code.
+
+Die angezeigte Gesamtdauer (Kachel, Editor, freier Modus) enthält den Vorlauf, damit sie der Zeit entspricht, die das Training tatsächlich braucht – sonst stünde auf der Kachel eine um 5 Sekunden zu kurze Angabe.
+
+**Bildschirm bleibt im Training an** über die Screen-Wake-Lock-Schnittstelle des Browsers, wie bei einer Video-App. Randbedingungen (per MDN geprüft, Baseline seit März 2025):
+- Nur über HTTPS verfügbar. Auf der GitHub-Pages-Adresse gegeben; beim Öffnen einer lokalen Datei (`file://`) fehlt sie, dann bleibt es beim bisherigen Verhalten.
+- Der Browser hebt die Sperre automatisch auf, sobald die Seite in den Hintergrund gerät – ein `visibilitychange`-Listener fordert sie bei der Rückkehr neu an.
+- Die Anfrage kann abgelehnt werden (Energiesparmodus, niedriger Akku). Das Training läuft dann unverändert weiter, nur schaltet der Bildschirm wie gewohnt ab.
+
+Die Sperre gilt vom Trainingsstart bis zum Trainingsende oder zum Verlassen der Trainingsansicht. **Eine Pause hebt sie bewusst nicht auf** – auch dann soll die Anzeige sichtbar bleiben.
+
+**Geprüft:** 34 automatische Prüfungen (headless) über Vorlauf im Ablauf, Tonfolge im Vorlauf, Zurücksetzen, freien Modus mit Vorlauf, alle Aufrufstellen des Wachhaltens (Start, Pause, Fortsetzen, Verlassen, Trainingsende) sowie die Umsetzung gegen eine nachgebildete Schnittstelle: Anforderung als `"screen"`, kein doppeltes Anfordern, Neuanforderung nach browserseitiger Aufhebung, manuelle Freigabe, fehlende Schnittstelle und abgelehnte Anfrage. Die Tests aus Phase 9 und der Signaltest aus 7c wurden auf den Vorlauf nachgezogen.
+
+### Phase 11 – noch offen
+Pausendauer pro Übung, Import/Export von Routinen, Umsortieren der Kacheln, Vorlaufdauer über die Oberfläche einstellbar.
 
 ## Workflow nach jeder Phase
 1. Im Browser testen
