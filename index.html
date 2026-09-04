@@ -65,21 +65,174 @@
     background-color: #367857; /* ruhiges, passendes Grün */
   }
 
+  /* Phase 7b: dritte Phasenart - der Seitenwechsel innerhalb einer zweiseitigen Übung.
+     Bewusst ein warmer Bernsteinton: klar von Blau (Übung) und Grün (Pause) zu
+     unterscheiden, auch aus dem Augenwinkel. Weißer Text erreicht darauf einen
+     Kontrast von rund 5.5:1 und liegt damit über dem WCAG-AA-Richtwert von 4.5:1. */
+  body.phase-seitenwechsel {
+    background-color: #8a5f33;
+  }
+
   h1 {
     margin: 0;
     font-size: clamp(28px, 7vw, 40px);
   }
 
-  /* Eingabebereich: die drei Einstellungsfelder nebeneinander, jetzt so breit wie die
-     restlichen Bereiche (nutzt fast die gesamte Bildschirmbreite). Jedes Feld nimmt
-     über flex:1 gleich viel Platz ein, das Eingabefeld selbst füllt sein Feld über
-     width:100% komplett aus, statt eine feste, kleine Breite zu haben. */
-  #eingabe-bereich {
+  /* Phase 7b: Der gesamte Einstellungsteil (Übungsliste + globale Werte). Sobald das
+     Training läuft, wird er komplett ausgeblendet (siehe body.training-laeuft weiter
+     unten), damit auf dem Handy nur noch Ring und Steuerbuttons zu sehen sind. */
+  #konfiguration {
     display: flex;
-    /* Untergrenze bewusst nicht zu klein, damit die drei Felder auch bei voller
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(10px, 2vh, 16px);
+    width: clamp(300px, 90vw, 460px);
+  }
+
+  /* Die beiden globalen Einstellungsfelder nebeneinander. Jedes Feld nimmt über
+     flex:1 gleich viel Platz ein, das Eingabefeld selbst füllt sein Feld über
+     width:100% komplett aus, statt eine feste, kleine Breite zu haben. */
+  #globale-einstellungen {
+    display: flex;
+    /* Untergrenze bewusst nicht zu klein, damit die Felder auch bei voller
        Breite immer klar als getrennte Felder erkennbar bleiben */
     gap: clamp(20px, 4vw, 28px);
-    width: clamp(300px, 90vw, 460px);
+    width: 100%;
+  }
+
+  /* Phase 7b: Die Übungsliste. Bei vielen Übungen wird sie scrollbar, statt die
+     Steuerbuttons darunter aus dem Bild zu schieben. */
+  #uebungen-liste {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: clamp(150px, 30vh, 300px);
+    overflow-y: auto;
+  }
+
+  /* Eine Übungszeile ist bewusst zweizeilig aufgebaut: oben Name und Dauer, unten
+     Häkchen und Aktionen. Auf einem Handy nebeneinander wären die einzelnen Ziele
+     zu klein zum sicheren Treffen (Fitts's Law); untereinander bleibt jedes Ziel
+     ausreichend groß und die Zeile trotzdem als eine Einheit erkennbar. */
+  #uebungen-liste li {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+
+  .uebung-kopf,
+  .uebung-fuss {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .uebung-fuss {
+    justify-content: space-between;
+  }
+
+  /* Laufende Nummer der Übung - dient beim Training als Orientierung ("Übung 3 von 6") */
+  .uebung-nummer {
+    font-size: clamp(14px, 3.6vw, 17px);
+    opacity: 0.7;
+    min-width: 1.4em;
+    text-align: right;
+  }
+
+  .uebung-name {
+    flex: 1;
+    min-width: 0; /* verhindert Overflow auf sehr schmalen Bildschirmen */
+    box-sizing: border-box;
+    padding: clamp(7px, 2vw, 10px);
+    border-radius: 6px;
+    border: none;
+    font-size: clamp(15px, 3.8vw, 18px);
+  }
+
+  /* Das Dauer-Feld braucht nur Platz für zwei bis drei Ziffern */
+  .uebung-dauer {
+    width: 4.5em;
+    flex: none;
+    text-align: center;
+  }
+
+  .uebung-einheit {
+    font-size: clamp(14px, 3.6vw, 17px);
+    opacity: 0.75;
+  }
+
+  /* Häkchen "beide Seiten": Label und Kästchen gehören zusammen, deshalb umschließt
+     das <label> beides - dadurch schaltet auch ein Tipp auf den Text das Häkchen um
+     und das Trefferfeld wird deutlich größer. */
+  .beide-seiten {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: clamp(14px, 3.6vw, 17px);
+    cursor: pointer;
+  }
+
+  .beide-seiten input[type="checkbox"] {
+    width: clamp(18px, 4.5vw, 22px);
+    height: clamp(18px, 4.5vw, 22px);
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .uebung-aktionen {
+    display: flex;
+    gap: 4px;
+  }
+
+  /* Die vier kleinen Symbol-Buttons einer Übungszeile (hoch, runter, duplizieren,
+     löschen). Bewusst gruppiert und mit Abstand zum übrigen Inhalt, damit reine
+     Icon-Buttons hier vertretbar bleiben. */
+  .uebung-aktionen button {
+    margin: 0;
+    font-size: clamp(15px, 4vw, 19px);
+    padding: clamp(6px, 1.8vw, 9px);
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .uebung-aktionen button:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.24);
+  }
+
+  /* Zeile unter der Liste: Übung hinzufügen und die Gesamtdauer der Routine */
+  #routine-fuss {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+  }
+
+  #uebung-hinzufuegen-button {
+    margin: 0;
+    font-size: clamp(15px, 3.8vw, 18px);
+    padding: clamp(8px, 2.2vw, 12px) clamp(12px, 3.5vw, 18px);
+  }
+
+  /* Gesamtdauer der Routine - ohne sie ist bei einer variablen Übungsliste nicht mehr
+     absehbar, wie lange das Training überhaupt dauert */
+  #gesamtdauer-anzeige {
+    font-size: clamp(14px, 3.6vw, 17px);
+    opacity: 0.85;
+  }
+
+  /* Solange das Training läuft, verschwinden Einstellungen und Presets komplett.
+     Sichtbar bleiben nur Ring, Phasenanzeige und die Steuerbuttons - das ist der
+     einzige Teil, der während einer Übung tatsächlich gebraucht wird. */
+  body.training-laeuft #konfiguration,
+  body.training-laeuft #presets-bereich {
+    display: none;
   }
 
   .eingabe-feld {
@@ -121,6 +274,13 @@
     font-size: clamp(24px, 6.5vw, 36px);
     font-weight: bold;
     letter-spacing: 2px;
+    /* Phase 7b: Hier steht jetzt der frei eingegebene Übungsname. Ohne Begrenzung
+       würde ein langer Name die Zeile über den Bildschirmrand hinausschieben, deshalb
+       Umbruch statt Überlauf - auch mitten im Wort, falls jemand ein sehr langes Wort
+       ohne Leerzeichen eingibt. */
+    max-width: clamp(300px, 90vw, 460px);
+    text-align: center;
+    overflow-wrap: break-word;
   }
 
   /* Zeigt den Rundenfortschritt, z.B. "Runde 3 von 5" */
@@ -184,6 +344,10 @@
 
   body.phase-pause #ring-fortschritt {
     stroke: #b5e3cc;
+  }
+
+  body.phase-seitenwechsel #ring-fortschritt {
+    stroke: #f4d9b4;
   }
 
   /* Die große Countdown-Anzeige, jetzt mittig über dem Ring platziert */
@@ -359,18 +523,27 @@
 
   <h1>Intervalltimer</h1>
 
-  <div id="eingabe-bereich">
-    <div class="eingabe-feld">
-      <label for="uebung-dauer-eingabe">Übung (Sek.)</label>
-      <input type="number" id="uebung-dauer-eingabe" value="30" min="1">
+  <!-- Phase 7b: Einstellungen bestehen jetzt aus der Übungsliste (wird per JavaScript
+       aufgebaut, siehe zeigeUebungenAn) und zwei Werten, die für alle Übungen gelten. -->
+  <div id="konfiguration">
+    <ul id="uebungen-liste"></ul>
+
+    <div id="routine-fuss">
+      <button id="uebung-hinzufuegen-button">+ Übung</button>
+      <span id="gesamtdauer-anzeige"></span>
     </div>
-    <div class="eingabe-feld">
-      <label for="pause-dauer-eingabe">Pause (Sek.)</label>
-      <input type="number" id="pause-dauer-eingabe" value="15" min="1">
-    </div>
-    <div class="eingabe-feld">
-      <label for="runden-eingabe">Runden</label>
-      <input type="number" id="runden-eingabe" value="5" min="1">
+
+    <div id="globale-einstellungen">
+      <div class="eingabe-feld">
+        <label for="pause-dauer-eingabe">Pause (Sek.)</label>
+        <input type="number" id="pause-dauer-eingabe" value="15" min="1">
+      </div>
+      <div class="eingabe-feld">
+        <!-- 0 ist hier ausdrücklich erlaubt: dann folgt die zweite Seite ohne
+             Zwischenabschnitt direkt auf die erste. -->
+        <label for="seitenwechsel-dauer-eingabe">Seitenwechsel (Sek.)</label>
+        <input type="number" id="seitenwechsel-dauer-eingabe" value="5" min="0">
+      </div>
     </div>
   </div>
 
@@ -465,9 +638,18 @@
     // im Abschnitt selbst und wird über aktuellerAbschnitt() gelesen.
     let aktuellerAbschnittIndex = 0;
 
-    // Wie viele Runden das Training insgesamt hat. Wird beim Erzeugen des Ablaufplans
-    // gesetzt und nur noch für den Text "Runde X von Y" gebraucht.
-    let gesamtRunden = 5;
+    // Phase 7b: Die Übungsliste - das ist ab jetzt die eigentliche Einstellung der App.
+    // Jeder Eintrag:
+    //   { name: "Hamstring", dauer: 30, beideSeiten: true }
+    // name        = frei wählbar, darf leer bleiben (dann wird "Übung 3" angezeigt)
+    // dauer       = Sekunden pro Seite
+    // beideSeiten = wenn true, läuft die Übung zweimal (links/rechts) mit einem
+    //               Seitenwechsel dazwischen, aber ohne Pause
+    let uebungen = [];
+
+    // Wie viele Übungen das Training insgesamt hat. Wird beim Erzeugen des Ablaufplans
+    // gesetzt und nur noch für den Text "Übung X von Y" gebraucht.
+    let gesamtUebungen = 1;
 
     // Gesamtdauer (in Sekunden) der aktuell laufenden Phase - wird gebraucht, um den
     // Fortschrittsring als Anteil (verbleibendeSekunden / aktuellePhaseDauer) zu berechnen
@@ -493,17 +675,29 @@
     // Vibration ist davon bewusst nicht betroffen (bleibt als haptisches Feedback erhalten).
     let stummgeschaltet = false;
 
-    // Phase 4: der Schlüssel, unter dem die Presets im localStorage abgelegt werden
-    const PRESETS_SPEICHER_SCHLUESSEL = "intervalltimer-presets";
+    // Phase 4 / 7b: die Schlüssel, unter denen im localStorage gespeichert wird.
+    // Mit der Übungsliste hat sich der Aufbau eines Presets grundlegend geändert,
+    // deshalb ein neuer Schlüssel. Der alte wird beim Start einmal entfernt, damit
+    // keine unbrauchbaren Daten im Browser zurückbleiben (die alten Presets sollten
+    // laut Absprache nicht übernommen werden).
+    const PRESETS_SPEICHER_SCHLUESSEL = "intervalltimer-routinen";
+    const ALTER_PRESETS_SCHLUESSEL = "intervalltimer-presets";
+
+    // Zusätzlich wird die gerade eingestellte Routine automatisch gespeichert. Ohne das
+    // müsste die komplette Übungsliste nach jedem Schließen der App neu eingetippt oder
+    // aus einem Preset geladen werden.
+    const AKTUELLE_ROUTINE_SCHLUESSEL = "intervalltimer-aktuelle-routine";
 
     // Phase 4: die Liste aller gespeicherten Presets, z.B.
-    // [{ name: "Dehnroutine Morgen", uebungDauer: 30, pauseDauer: 15, runden: 5 }, ...]
+    // [{ name: "Dehnroutine Morgen", uebungen: [...], pauseDauer: 15, seitenwechselDauer: 5 }, ...]
     let presets = [];
 
     // ---- Referenzen auf die HTML-Elemente holen ----
-    const uebungDauerEingabe = document.getElementById("uebung-dauer-eingabe");
+    const uebungenListe = document.getElementById("uebungen-liste");
+    const uebungHinzufuegenButton = document.getElementById("uebung-hinzufuegen-button");
+    const gesamtdauerAnzeige = document.getElementById("gesamtdauer-anzeige");
     const pauseDauerEingabe = document.getElementById("pause-dauer-eingabe");
-    const rundenEingabe = document.getElementById("runden-eingabe");
+    const seitenwechselDauerEingabe = document.getElementById("seitenwechsel-dauer-eingabe");
     const phaseAnzeige = document.getElementById("phase-anzeige");
     const rundenAnzeige = document.getElementById("runden-anzeige");
     const anzeige = document.getElementById("anzeige");
@@ -528,28 +722,63 @@
 
     // ---- Phase 7a: Ablaufplan aufbauen und lesen ----
 
-    // Baut den kompletten Ablaufplan aus den aktuellen Eingabefeldern auf.
-    // Der erzeugte Plan bildet exakt den bisherigen Ablauf ab: Übung, Pause, Übung,
-    // Pause, ... und nach der letzten Übung KEINE Pause mehr, weil das Training dort
-    // endet. Bei 3 Runden entsteht also:
-    //   [Übung(R1), Pause(R1), Übung(R2), Pause(R2), Übung(R3)]
-    function erzeugeAblaufplan() {
-      const uebungDauer = holeZahlAusEingabe(uebungDauerEingabe, 1);
-      const pauseDauer = holeZahlAusEingabe(pauseDauerEingabe, 1);
-      const runden = holeZahlAusEingabe(rundenEingabe, 1);
-
-      gesamtRunden = runden; // für die Anzeige "Runde X von Y"
-
+    // Phase 7b: Baut den Ablaufplan aus einer Übungsliste auf. Bewusst eine reine
+    // Rechenfunktion ohne Zugriff auf Eingabefelder - dadurch lässt sich derselbe
+    // Aufbau auch für ein gespeichertes Preset durchrechnen (etwa um dessen
+    // Gesamtdauer anzuzeigen), ohne es vorher laden zu müssen.
+    //
+    // Regeln:
+    // - eine einseitige Übung ergibt einen Abschnitt
+    // - eine zweiseitige Übung ergibt zwei Abschnitte (links/rechts) mit einem
+    //   Seitenwechsel dazwischen, aber ohne Pause
+    // - ist die Seitenwechseldauer 0, entfällt der Zwischenabschnitt und die zweite
+    //   Seite beginnt unmittelbar
+    // - zwischen zwei Übungen steht eine Pause, nach der letzten Übung nicht
+    function baueAblaufplan(uebungsliste, pauseDauer, seitenwechselDauer) {
       const plan = [];
-      for (let runde = 1; runde <= runden; runde++) {
-        plan.push({ typ: "uebung", dauer: uebungDauer, runde: runde });
+
+      uebungsliste.forEach(function (uebung, index) {
+        const nummer = index + 1; // 1-basiert für die Anzeige "Übung 3 von 6"
+
+        if (uebung.beideSeiten) {
+          plan.push({ typ: "uebung", dauer: uebung.dauer, nummer: nummer, name: uebung.name, seite: "links" });
+
+          if (seitenwechselDauer > 0) {
+            plan.push({ typ: "seitenwechsel", dauer: seitenwechselDauer, nummer: nummer, name: uebung.name, seite: null });
+          }
+
+          plan.push({ typ: "uebung", dauer: uebung.dauer, nummer: nummer, name: uebung.name, seite: "rechts" });
+        } else {
+          plan.push({ typ: "uebung", dauer: uebung.dauer, nummer: nummer, name: uebung.name, seite: null });
+        }
 
         // Nach der letzten Übung folgt keine Pause mehr - das Training ist dort zu Ende
-        if (runde < runden) {
-          plan.push({ typ: "pause", dauer: pauseDauer, runde: runde });
+        if (index < uebungsliste.length - 1) {
+          plan.push({ typ: "pause", dauer: pauseDauer, nummer: nummer, name: uebung.name, seite: null });
         }
-      }
+      });
+
       return plan;
+    }
+
+    // Baut den Ablaufplan aus dem, was gerade eingestellt ist.
+    function erzeugeAblaufplan() {
+      gesamtUebungen = uebungen.length; // für die Anzeige "Übung X von Y"
+      return baueAblaufplan(uebungen, holeZahlAusEingabe(pauseDauerEingabe, 1), holeZahlAusEingabe(seitenwechselDauerEingabe, 0));
+    }
+
+    // Addiert die Dauer aller Abschnitte eines Plans - also wie lange das Training
+    // insgesamt läuft.
+    function berechneGesamtdauer(plan) {
+      return plan.reduce(function (summe, abschnitt) {
+        return summe + abschnitt.dauer;
+      }, 0);
+    }
+
+    // Anzeigename einer Übung: der eingegebene Name, sonst ersatzweise "Übung 3"
+    function beschriftungFuer(abschnitt) {
+      const name = (abschnitt.name || "").trim();
+      return name !== "" ? name : "Übung " + abschnitt.nummer;
     }
 
     // Gibt den Abschnitt zurück, der gerade läuft. Ersetzt die früheren Variablen
@@ -628,31 +857,278 @@
     // Phase 2: Aktualisiert Phasentext, Rundentext und die Hintergrundfarbe passend zur aktuellen Phase.
     // Phase 7a: liest Phase und Runde jetzt aus dem aktuellen Abschnitt des Ablaufplans
     // statt aus eigenen Variablen.
+    // Phase 7b: Setzt genau eine der drei Phasenklassen am <body> - sie steuert
+    // Hintergrund- und Ringfarbe (siehe CSS).
+    function setzePhasenFarbe(klasse) {
+      document.body.classList.remove("phase-uebung", "phase-pause", "phase-seitenwechsel");
+      document.body.classList.add(klasse);
+    }
+
     function aktualisierePhaseAnzeige() {
       const abschnitt = aktuellerAbschnitt();
 
       if (abschnitt.typ === "uebung") {
-        phaseAnzeige.textContent = "ÜBUNG";
-        document.body.classList.remove("phase-pause");
-        document.body.classList.add("phase-uebung");
+        // Bei zweiseitigen Übungen zusätzlich anzeigen, welche Seite gerade dran ist
+        const seitenZusatz = abschnitt.seite ? " – " + abschnitt.seite.toUpperCase() : "";
+        phaseAnzeige.textContent = beschriftungFuer(abschnitt).toUpperCase() + seitenZusatz;
+        setzePhasenFarbe("phase-uebung");
+      } else if (abschnitt.typ === "seitenwechsel") {
+        phaseAnzeige.textContent = "SEITE WECHSELN";
+        setzePhasenFarbe("phase-seitenwechsel");
       } else {
         phaseAnzeige.textContent = "PAUSE";
-        document.body.classList.remove("phase-uebung");
-        document.body.classList.add("phase-pause");
+        setzePhasenFarbe("phase-pause");
       }
-      rundenAnzeige.textContent = "Runde " + abschnitt.runde + " von " + gesamtRunden;
+
+      rundenAnzeige.textContent = "Übung " + abschnitt.nummer + " von " + gesamtUebungen;
     }
 
-    // Aktiviert oder deaktiviert die drei Eingabefelder (z.B. gesperrt, solange der Timer läuft)
+    // Sperrt bzw. entsperrt alles, was während eines laufenden Trainings nicht
+    // verändert werden darf. Phase 7b: Übungsliste und Presets werden dabei zusätzlich
+    // komplett ausgeblendet (siehe body.training-laeuft im CSS), damit während der
+    // Übung nur Ring und Steuerbuttons sichtbar sind.
     function eingabenAktivieren(aktiv) {
-      uebungDauerEingabe.disabled = !aktiv;
+      document.body.classList.toggle("training-laeuft", !aktiv);
+
       pauseDauerEingabe.disabled = !aktiv;
-      rundenEingabe.disabled = !aktiv;
+      seitenwechselDauerEingabe.disabled = !aktiv;
+      uebungHinzufuegenButton.disabled = !aktiv;
 
       // Phase 4: Preset-Speichern ebenfalls sperren, solange der Timer läuft
       presetNameEingabe.disabled = !aktiv;
       presetSpeichernButton.disabled = !aktiv;
+      zeigeUebungenAn(); // Felder der Übungszeilen passend sperren/entsperren
       zeigePresetsAn(); // baut die Liste neu auf, damit "Laden"/"Löschen" passend gesperrt sind
+    }
+
+    // ---- Phase 7b: Die Übungsliste bedienen ----
+
+    // Die Symbole der vier kleinen Buttons je Übungszeile. Als Inline-SVG (statt Emoji),
+    // damit sie auf allen Geräten gleich aussehen - wie schon bei den Steuerbuttons.
+    const SYMBOL_HOCH =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>';
+    const SYMBOL_RUNTER =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+    const SYMBOL_DUPLIZIEREN =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+    const SYMBOL_LOESCHEN =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+
+    // Erzeugt einen der kleinen Symbol-Buttons einer Übungszeile.
+    // titel = Text, den Browser als Tooltip bzw. Screenreader vorlesen (reine
+    // Symbol-Buttons brauchen sonst eine Beschriftung, die niemand sieht)
+    function baueAktionsButton(symbol, titel, gesperrt, beiKlick) {
+      const knopf = document.createElement("button");
+      knopf.innerHTML = symbol;
+      knopf.title = titel;
+      knopf.setAttribute("aria-label", titel);
+      knopf.disabled = gesperrt;
+      knopf.addEventListener("click", beiKlick);
+      return knopf;
+    }
+
+    // Baut die sichtbare Übungsliste komplett neu auf, ausgehend vom Inhalt von uebungen[].
+    // Wird nur bei strukturellen Änderungen aufgerufen (hinzufügen, löschen, verschieben,
+    // Preset laden) - beim Tippen in ein Feld ausdrücklich NICHT, weil das Eingabefeld
+    // sonst mitten im Wort neu erzeugt würde und den Tastaturfokus verlöre.
+    function zeigeUebungenAn() {
+      const gesperrt = intervallId !== null;
+      uebungenListe.innerHTML = "";
+
+      uebungen.forEach(function (uebung, index) {
+        const zeile = document.createElement("li");
+
+        // --- obere Zeile: Nummer, Name, Dauer ---
+        const kopf = document.createElement("div");
+        kopf.className = "uebung-kopf";
+
+        const nummer = document.createElement("span");
+        nummer.className = "uebung-nummer";
+        nummer.textContent = index + 1 + ".";
+
+        const nameFeld = document.createElement("input");
+        nameFeld.type = "text";
+        nameFeld.className = "uebung-name";
+        nameFeld.value = uebung.name;
+        nameFeld.placeholder = "Übung " + (index + 1);
+        nameFeld.disabled = gesperrt;
+        nameFeld.addEventListener("input", function () {
+          uebungen[index].name = nameFeld.value;
+          routineGeaendert(false); // ohne Neuaufbau, sonst springt der Cursor aus dem Feld
+        });
+
+        const dauerFeld = document.createElement("input");
+        dauerFeld.type = "number";
+        dauerFeld.className = "uebung-dauer";
+        dauerFeld.min = "1";
+        dauerFeld.value = uebung.dauer;
+        dauerFeld.disabled = gesperrt;
+        dauerFeld.addEventListener("input", function () {
+          uebungen[index].dauer = holeZahlAusEingabe(dauerFeld, 1);
+          routineGeaendert(false);
+        });
+
+        const einheit = document.createElement("span");
+        einheit.className = "uebung-einheit";
+        einheit.textContent = "Sek.";
+
+        kopf.appendChild(nummer);
+        kopf.appendChild(nameFeld);
+        kopf.appendChild(dauerFeld);
+        kopf.appendChild(einheit);
+
+        // --- untere Zeile: Häkchen "beide Seiten" und die vier Aktionen ---
+        const fuss = document.createElement("div");
+        fuss.className = "uebung-fuss";
+
+        const seitenLabel = document.createElement("label");
+        seitenLabel.className = "beide-seiten";
+
+        const seitenHaken = document.createElement("input");
+        seitenHaken.type = "checkbox";
+        seitenHaken.checked = uebung.beideSeiten;
+        seitenHaken.disabled = gesperrt;
+        seitenHaken.addEventListener("change", function () {
+          uebungen[index].beideSeiten = seitenHaken.checked;
+          routineGeaendert(false);
+        });
+
+        seitenLabel.appendChild(seitenHaken);
+        seitenLabel.appendChild(document.createTextNode("beide Seiten"));
+
+        const aktionen = document.createElement("div");
+        aktionen.className = "uebung-aktionen";
+
+        aktionen.appendChild(baueAktionsButton(SYMBOL_HOCH, "Nach oben", gesperrt || index === 0, function () {
+          verschiebeUebung(index, -1);
+        }));
+        aktionen.appendChild(baueAktionsButton(SYMBOL_RUNTER, "Nach unten", gesperrt || index === uebungen.length - 1, function () {
+          verschiebeUebung(index, 1);
+        }));
+        aktionen.appendChild(baueAktionsButton(SYMBOL_DUPLIZIEREN, "Duplizieren", gesperrt, function () {
+          dupliziereUebung(index);
+        }));
+        aktionen.appendChild(baueAktionsButton(SYMBOL_LOESCHEN, "Löschen", gesperrt, function () {
+          loescheUebung(index);
+        }));
+
+        fuss.appendChild(seitenLabel);
+        fuss.appendChild(aktionen);
+
+        zeile.appendChild(kopf);
+        zeile.appendChild(fuss);
+        uebungenListe.appendChild(zeile);
+      });
+    }
+
+    // Zeigt an, wie lange das komplette Training mit den aktuellen Einstellungen dauert.
+    // Ohne diese Angabe wäre bei einer frei zusammengestellten Liste nicht mehr
+    // absehbar, worauf man sich einlässt.
+    function aktualisiereGesamtdauerAnzeige() {
+      if (uebungen.length === 0) {
+        gesamtdauerAnzeige.textContent = "";
+      } else {
+        gesamtdauerAnzeige.textContent = "Gesamt " + formatiereZeit(berechneGesamtdauer(ablaufplan));
+      }
+    }
+
+    // Wird nach jeder Änderung an der Routine aufgerufen.
+    // neuAufbauen = true, wenn sich die Struktur geändert hat (Anzahl oder Reihenfolge
+    // der Übungen) und die sichtbare Liste deshalb neu gezeichnet werden muss.
+    function routineGeaendert(neuAufbauen) {
+      if (neuAufbauen) {
+        zeigeUebungenAn();
+      }
+      speichereAktuelleRoutine();
+      uebernehmeEinstellungen();
+    }
+
+    function fuegeUebungHinzu() {
+      // Neue Übungen übernehmen die Dauer der letzten vorhandenen - in einer Routine
+      // sind die Übungen meist gleich lang, das spart Tipparbeit.
+      const letzteDauer = uebungen.length > 0 ? uebungen[uebungen.length - 1].dauer : 30;
+      uebungen.push({ name: "", dauer: letzteDauer, beideSeiten: false });
+      routineGeaendert(true);
+    }
+
+    function dupliziereUebung(index) {
+      const vorlage = uebungen[index];
+      // Eine echte Kopie einfügen, kein Verweis auf dasselbe Objekt - sonst würde eine
+      // Änderung an der Kopie auch das Original mit verändern.
+      uebungen.splice(index + 1, 0, { name: vorlage.name, dauer: vorlage.dauer, beideSeiten: vorlage.beideSeiten });
+      routineGeaendert(true);
+    }
+
+    function loescheUebung(index) {
+      uebungen.splice(index, 1);
+      routineGeaendert(true);
+    }
+
+    // richtung = -1 für nach oben, +1 für nach unten
+    function verschiebeUebung(index, richtung) {
+      const ziel = index + richtung;
+      if (ziel < 0 || ziel >= uebungen.length) {
+        return; // am Rand der Liste passiert nichts
+      }
+      const zwischenspeicher = uebungen[index];
+      uebungen[index] = uebungen[ziel];
+      uebungen[ziel] = zwischenspeicher;
+      routineGeaendert(true);
+    }
+
+    // Speichert die gerade eingestellte Routine, damit sie beim nächsten Öffnen der App
+    // noch da ist (sonst müsste die Liste jedes Mal neu eingetippt werden).
+    function speichereAktuelleRoutine() {
+      // In try/catch, weil das Schreiben in den Browserspeicher fehlschlagen kann
+      // (z.B. voller Speicher oder Browser mit gesperrtem Seitenspeicher). Der Timer
+      // selbst soll dann trotzdem normal weiterlaufen - nur eben ohne zu merken,
+      // wie die Routine zuletzt aussah.
+      try {
+        localStorage.setItem(
+          AKTUELLE_ROUTINE_SCHLUESSEL,
+          JSON.stringify({
+            uebungen: uebungen,
+            pauseDauer: holeZahlAusEingabe(pauseDauerEingabe, 1),
+            seitenwechselDauer: holeZahlAusEingabe(seitenwechselDauerEingabe, 0)
+          })
+        );
+      } catch (fehler) {
+        // bewusst ignoriert - siehe Kommentar oben
+      }
+    }
+
+    // Holt die zuletzt eingestellte Routine zurück. Ist nichts gespeichert (oder sind die
+    // Daten unbrauchbar), wird mit einer einzelnen 30-Sekunden-Übung begonnen.
+    function ladeAktuelleRoutine() {
+      const gespeicherterText = localStorage.getItem(AKTUELLE_ROUTINE_SCHLUESSEL);
+      let gelesen = null;
+
+      if (gespeicherterText !== null) {
+        try {
+          gelesen = JSON.parse(gespeicherterText);
+        } catch (fehler) {
+          gelesen = null; // beschädigte Daten ignorieren statt die App blockieren
+        }
+      }
+
+      if (gelesen && Array.isArray(gelesen.uebungen) && gelesen.uebungen.length > 0) {
+        uebungen = gelesen.uebungen.map(saubereUebung);
+        pauseDauerEingabe.value = gelesen.pauseDauer;
+        seitenwechselDauerEingabe.value = gelesen.seitenwechselDauer;
+      } else {
+        uebungen = [{ name: "", dauer: 30, beideSeiten: false }];
+      }
+    }
+
+    // Bringt einen gespeicherten Eintrag in die erwartete Form. Schützt davor, dass
+    // unvollständige oder manipulierte Daten aus dem Speicher später zu Abstürzen führen.
+    function saubereUebung(eintrag) {
+      const dauer = parseInt(eintrag && eintrag.dauer, 10);
+      return {
+        name: eintrag && typeof eintrag.name === "string" ? eintrag.name : "",
+        dauer: isNaN(dauer) || dauer < 1 ? 30 : dauer,
+        beideSeiten: !!(eintrag && eintrag.beideSeiten)
+      };
     }
 
     // ---- Phase 4: Presets speichern, laden und löschen (über localStorage) ----
@@ -661,11 +1137,21 @@
     // localStorage speichert nur Text, deshalb müssen wir mit JSON.parse wieder
     // ein normales JavaScript-Array daraus machen.
     function ladePresetsAusSpeicher() {
+      // Phase 7b: Presets aus der Zeit vor der Übungsliste sind mit dem neuen Aufbau
+      // nicht mehr verwendbar und sollten laut Absprache auch nicht übernommen werden -
+      // deshalb wird der alte Speicherplatz einmalig geräumt.
+      localStorage.removeItem(ALTER_PRESETS_SCHLUESSEL);
+
       const gespeicherterText = localStorage.getItem(PRESETS_SPEICHER_SCHLUESSEL);
       if (gespeicherterText === null) {
         presets = []; // noch nichts gespeichert
-      } else {
+        return;
+      }
+
+      try {
         presets = JSON.parse(gespeicherterText);
+      } catch (fehler) {
+        presets = []; // beschädigte Daten ignorieren statt die App blockieren
       }
     }
 
@@ -683,9 +1169,15 @@
       presets.forEach(function (preset, index) {
         const listenEintrag = document.createElement("li");
 
+        // Kurzinfo zum Inhalt: Anzahl der Übungen und wie lange die Routine läuft.
+        // Die Gesamtdauer wird dafür aus den gespeicherten Daten durchgerechnet, ohne
+        // das Preset laden zu müssen.
+        const anzahl = preset.uebungen.length;
+        const dauer = berechneGesamtdauer(baueAblaufplan(preset.uebungen, preset.pauseDauer, preset.seitenwechselDauer));
+
         const nameText = document.createElement("span");
         nameText.textContent =
-          preset.name + " (" + preset.uebungDauer + "s / " + preset.pauseDauer + "s / " + preset.runden + " Runden)";
+          preset.name + " (" + anzahl + (anzahl === 1 ? " Übung · " : " Übungen · ") + formatiereZeit(dauer) + ")";
 
         const ladenButton = document.createElement("button");
         ladenButton.textContent = "Laden";
@@ -708,18 +1200,21 @@
       });
     }
 
-    // Speichert die aktuellen Werte der drei Eingabefelder als neues Preset
+    // Speichert die komplette aktuelle Routine (Übungsliste plus die beiden globalen
+    // Werte) als neues Preset
     function speicherePreset() {
       const name = presetNameEingabe.value.trim();
-      if (name === "") {
-        return; // ohne Namen kein Preset anlegen
+      if (name === "" || uebungen.length === 0) {
+        return; // ohne Namen oder ohne Übungen kein Preset anlegen
       }
 
       presets.push({
         name: name,
-        uebungDauer: holeZahlAusEingabe(uebungDauerEingabe, 1),
+        // Echte Kopien der Übungen ablegen, damit spätere Änderungen an der aktuellen
+        // Liste das gespeicherte Preset nicht nachträglich mit verändern
+        uebungen: uebungen.map(saubereUebung),
         pauseDauer: holeZahlAusEingabe(pauseDauerEingabe, 1),
-        runden: holeZahlAusEingabe(rundenEingabe, 1)
+        seitenwechselDauer: holeZahlAusEingabe(seitenwechselDauerEingabe, 0)
       });
 
       speicherePresetsInSpeicher();
@@ -727,13 +1222,14 @@
       presetNameEingabe.value = ""; // Eingabefeld für den nächsten Namen leeren
     }
 
-    // Überträgt die Werte eines gespeicherten Presets in die drei Eingabefelder
-    // und übernimmt sie direkt in den Timer (über setzeZurueck)
+    // Übernimmt ein gespeichertes Preset als aktuelle Routine
     function ladePreset(index) {
       const preset = presets[index];
-      uebungDauerEingabe.value = preset.uebungDauer;
+      uebungen = preset.uebungen.map(saubereUebung); // Kopien, nicht das Original verändern
       pauseDauerEingabe.value = preset.pauseDauer;
-      rundenEingabe.value = preset.runden;
+      seitenwechselDauerEingabe.value = preset.seitenwechselDauer;
+      zeigeUebungenAn();
+      speichereAktuelleRoutine();
       setzeZurueck();
     }
 
@@ -913,6 +1409,11 @@
         return;
       }
 
+      // Phase 7b: Ohne Übungen gibt es nichts zu starten
+      if (ablaufplan.length === 0) {
+        return;
+      }
+
       fertigMeldung.textContent = "";
       initialisiereAudio(); // Phase 3: Audio hier starten, da wir gerade in einem Klick-Handler sind
 
@@ -934,24 +1435,44 @@
       pauseButton.disabled = true;
     }
 
-    // Setzt den Timer auf die eingegebenen Einstellungen zurück (Runde 1, Phase "Übung")
+    // Phase 7a/7b: Baut den Ablaufplan aus den aktuellen Einstellungen neu auf und
+    // stellt die Anzeige auf dessen Anfang. Bewusst getrennt von setzeZurueck(): Diese
+    // Funktion rührt die Bedienoberfläche nicht an und kann deshalb auch bei jedem
+    // Tastendruck in einem Eingabefeld aufgerufen werden, ohne den Tastaturfokus zu
+    // stören.
+    function uebernehmeEinstellungen() {
+      ablaufplan = erzeugeAblaufplan();
+      aktuellerAbschnittIndex = 0;
+      aktualisiereGesamtdauerAnzeige();
+
+      if (ablaufplan.length === 0) {
+        // Ohne Übungen gibt es nichts anzuzeigen und nichts zu starten
+        verbleibendeSekunden = 0;
+        aktuellePhaseDauer = 0;
+        phaseAnzeige.textContent = "KEINE ÜBUNG";
+        rundenAnzeige.textContent = "Füge unten eine Übung hinzu";
+        setzePhasenFarbe("phase-uebung");
+        aktualisiereAnzeige();
+        stoppeRingAnimationSofort();
+        startButton.disabled = true;
+        return;
+      }
+
+      uebernehmeAktuellenAbschnitt();
+      aktualisiereAnzeige();
+      aktualisierePhaseAnzeige();
+      stoppeRingAnimationSofort(); // Ring springt sofort auf den neuen Stand, statt hinzugleiten
+      startButton.disabled = false;
+    }
+
+    // Setzt den Timer auf den Anfang der Routine zurück (erste Übung, Sekunde 0)
     function setzeZurueck() {
       clearInterval(intervallId);
       intervallId = null;
 
-      // Phase 7a: Ablaufplan aus den aktuellen Eingabefeldern komplett neu aufbauen
-      // und wieder an dessen Anfang springen. Weil der Plan hier bei jeder Änderung
-      // neu entsteht, wirken geänderte Einstellungen sofort.
-      ablaufplan = erzeugeAblaufplan();
-      aktuellerAbschnittIndex = 0;
-      uebernehmeAktuellenAbschnitt();
-
-      aktualisiereAnzeige();
-      aktualisierePhaseAnzeige();
-      stoppeRingAnimationSofort(); // Ring springt sofort auf den zurückgesetzten Stand, statt hinzugleiten
+      uebernehmeEinstellungen();
 
       fertigMeldung.textContent = "";
-      startButton.disabled = false;
       pauseButton.disabled = true;
       eingabenAktivieren(true);
     }
@@ -986,20 +1507,20 @@
     resetButton.addEventListener("click", setzeZurueck);
     stummButton.addEventListener("click", schalteStummUm);
 
-    // Wenn der Nutzer eine Einstellung ändert (bevor der Timer läuft), Anzeige direkt aktualisieren
-    uebungDauerEingabe.addEventListener("input", function () {
-      if (intervallId === null) {
-        setzeZurueck();
-      }
-    });
+    // Phase 7b: Übung hinzufügen
+    uebungHinzufuegenButton.addEventListener("click", fuegeUebungHinzu);
+
+    // Wenn der Nutzer eine der beiden globalen Einstellungen ändert (bevor der Timer
+    // läuft), Anzeige direkt aktualisieren. routineGeaendert(false) baut die Übungsliste
+    // dabei nicht neu auf, damit der Cursor im Eingabefeld bleibt.
     pauseDauerEingabe.addEventListener("input", function () {
       if (intervallId === null) {
-        setzeZurueck();
+        routineGeaendert(false);
       }
     });
-    rundenEingabe.addEventListener("input", function () {
+    seitenwechselDauerEingabe.addEventListener("input", function () {
       if (intervallId === null) {
-        setzeZurueck();
+        routineGeaendert(false);
       }
     });
 
@@ -1008,6 +1529,10 @@
 
     // Phase 4: gespeicherte Presets aus dem localStorage laden und anzeigen
     ladePresetsAusSpeicher();
+
+    // Phase 7b: zuletzt eingestellte Routine wiederherstellen und anzeigen
+    ladeAktuelleRoutine();
+    zeigeUebungenAn();
 
     // Beim Laden der Seite die Anzeige einmal initialisieren
     setzeZurueck();

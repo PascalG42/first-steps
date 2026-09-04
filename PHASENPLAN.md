@@ -58,14 +58,19 @@ Nacken            30s
 
 **Teilschritte:**
 
-*7a – Umbau im Inneren, Verhalten unverändert*
+*7a – Umbau im Inneren, Verhalten unverändert* ✅ erledigt
 Timer auf den Ablaufplan umstellen (`wechsleZurNaechstenPhase`, `stehtNormalerPhasenwechselBevor`, alle Prüfungen auf `aktuellePhase === "uebung"` bei Sounds, Ringfarbe und Vorwarnung). Die drei Eingabefelder bleiben zunächst unverändert und erzeugen intern denselben Ablauf wie bisher. Testkriterium: kein sichtbarer oder hörbarer Unterschied zur bisherigen Version.
 
-*7b – Übungsliste als Bedienoberfläche*
-Die drei Eingabefelder werden durch eine Liste ersetzt: Übungen anlegen, bearbeiten, duplizieren, löschen und in der Reihenfolge verschieben. Pro Zeile Name, Dauer, Häkchen "beide Seiten". Darunter zentral Pausendauer und Seitenwechseldauer. Presets speichern ab jetzt die komplette Liste. Während des Trainings wird die Liste ausgeblendet, damit auf dem Handy nur Ring und Buttons sichtbar bleiben.
+*7b – Übungsliste als Bedienoberfläche* ✅ erledigt
+Die drei Eingabefelder wurden durch eine Liste ersetzt: Übungen anlegen, bearbeiten, duplizieren, löschen und in der Reihenfolge verschieben. Pro Zeile Name, Dauer, Häkchen "beide Seiten". Darunter zentral Pausendauer und Seitenwechseldauer. Presets speichern die komplette Routine. Während des Trainings werden Liste und Presets ausgeblendet, sodass nur Ring, Phasenanzeige und Steuerbuttons sichtbar bleiben.
 
-*7c – Anzeige und Signale für den Seitenwechsel*
-Eigene Anzeige ("SEITE WECHSELN") und ein vom Pausensignal klar unterscheidbares Ton-/Vibrationssignal, damit ohne Hinsehen erkennbar ist, ob umgelagert oder ausgeruht wird. Phasenanzeige zeigt Übungsname, Seite und Fortschritt (z. B. "Hamstring – rechts · Übung 2 von 6").
+Gegenüber der ursprünglichen Planung mit aufgenommen, weil der Schritt sonst nicht sinnvoll testbar gewesen wäre bzw. die Liste sonst unpraktisch bliebe:
+- Anzeige des Seitenwechsels ("SEITE WECHSELN") samt eigener Hintergrund- und Ringfarbe (warmer Bernsteinton), sowie Übungsname und Seite in der Phasenanzeige — ursprünglich für 7c vorgesehen.
+- Die eingestellte Routine wird automatisch gespeichert und beim nächsten Öffnen wiederhergestellt. Ohne das müsste die Liste nach jedem Schließen der App neu eingetippt oder aus einem Preset geladen werden.
+- Anzeige der Gesamtdauer unter der Liste, da diese bei frei zusammengestellten Übungen sonst nicht mehr absehbar ist.
+
+*7c – Akustische Unterscheidung des Seitenwechsels* ⬜ offen
+Ein vom Pausensignal klar unterscheidbares Ton-/Vibrationssignal beim Seitenwechsel, damit ohne Hinsehen erkennbar ist, ob umgelagert oder ausgeruht werden soll. Sichtbar ist der Seitenwechsel bereits seit 7b.
 
 **Risiken:**
 - Fehler in der Timer-Logik beim Umbau (z. B. letzte Pause wird nicht weggelassen, Signal am falschen Punkt): Wahrscheinlichkeit mittel, Auswirkung mittel. Gegenmaßnahme: 7a strikt verhaltensneutral halten und vor 7b testen, jeder Teilschritt ein eigener Commit.
