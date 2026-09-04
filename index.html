@@ -50,26 +50,69 @@
     flex-direction: column;
     align-items: center;
     gap: clamp(20px, 3.5vh, 40px);
+    /* Phase 9: feste Inhaltsbreite. Vorher spannten die Kinder mit ihren eigenen
+       clamp()-Breiten den Block auf; jetzt fordern die Ansichten width:100% - und das
+       wäre ohne Breite hier ein Zirkelschluss (100% von einer Breite, die selbst erst
+       aus dem Inhalt entstünde). Die Kacheln blieben dadurch auf ihrer Mindestbreite
+       stehen und ihre Beschriftungen brachen unnötig um. */
+    width: clamp(300px, 90vw, 460px);
   }
 
-  /* Beim Einrichten sind mehr Bereiche gleichzeitig sichtbar als während des Trainings
-     (Übungsliste, globale Werte, Ring, Steuerbuttons, gespeicherte Routinen). Engere
-     Abstände und ein kleinerer Titel bringen die Routinen ohne Scrollen ins Bild.
+  /* Außerhalb des Trainings stehen mehr Bereiche gleichzeitig untereinander. Engere
+     Abstände, ein kleinerer Rand und ein kleinerer Titel halten sie gemeinsam im Bild.
      Während des Trainings gelten weiterhin die großzügigen Werte oben. */
-  body:not(.training-laeuft) #inhalt {
+  body:not(.ansicht-training) #inhalt {
     gap: clamp(12px, 2vh, 22px);
   }
 
-  /* Auch der Rand oben und unten faellt beim Einrichten kleiner aus - reiner Leerraum,
-     der hier am ehesten entbehrlich ist. Während des Trainings bleibt der großzügige
-     Wert erhalten. */
-  body:not(.training-laeuft) {
+  body:not(.ansicht-training) {
     padding-top: 12px;
     padding-bottom: 12px;
+    /* Startbildschirm, Editor und freier Modus beginnen oben - so wie man es von
+       jeder App erwartet (Jakob's Law), und im Editor wächst die Übungsliste nach
+       unten, statt den Block zu verschieben. Nur die Trainingsansicht bleibt
+       vertikal zentriert, weil dort der Ring im Mittelpunkt steht. */
+    align-items: flex-start;
   }
 
-  body:not(.training-laeuft) h1 {
+  body:not(.ansicht-training) h1 {
     font-size: clamp(20px, 5vw, 28px);
+  }
+
+  /* ---- Phase 9: Ansichten ----
+     Die App besteht jetzt aus vier Ansichten (Startbildschirm, Editor, Training,
+     freier Modus), von denen immer genau eine sichtbar ist. Gesteuert wird das über
+     eine Klasse am <body> (ansicht-start, ansicht-editor, ...), die zeigeAnsicht()
+     setzt - ein echter Seitenwechsel im Browser ist dafür nicht nötig. */
+  .ansicht {
+    display: none; /* Standard: verborgen, die aktive Ansicht wird unten eingeschaltet */
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(14px, 2.2vh, 24px);
+    width: 100%;
+  }
+
+  body.ansicht-start #ansicht-start,
+  body.ansicht-editor #ansicht-editor,
+  body.ansicht-training #ansicht-training,
+  body.ansicht-frei #ansicht-frei {
+    display: flex;
+  }
+
+  /* Zurück-Pfeil: fest oben links, Gegenstück zum Ton-Button oben rechts. Auf dem
+     Startbildschirm gibt es kein "zurück" mehr, dort ist er ausgeblendet. */
+  #zurueck-button {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    margin: 0;
+    font-size: 22px;
+    padding: 8px 10px;
+    z-index: 10;
+  }
+
+  body.ansicht-start #zurueck-button {
+    display: none;
   }
 
   /* Phase 2: Hintergrundfarbe zeigt, ob gerade "Übung" oder "Pause" aktiv ist.
@@ -98,15 +141,181 @@
     font-size: clamp(28px, 7vw, 40px);
   }
 
-  /* Phase 7b: Der gesamte Einstellungsteil (Übungsliste + globale Werte). Sobald das
-     Training läuft, wird er komplett ausgeblendet (siehe body.training-laeuft weiter
-     unten), damit auf dem Handy nur noch Ring und Steuerbuttons zu sehen sind. */
-  #konfiguration {
+
+  /* ---- Startbildschirm ---- */
+
+  /* Kurzer Hinweistext über den Kacheln: erklärt im Bearbeiten-Modus, was ein Tipp
+     jetzt bewirkt, und weist bei leerer Übersicht auf den nächsten Schritt hin */
+  #start-hinweis {
+    font-size: clamp(15px, 3.8vw, 18px);
+    opacity: 0.9;
+    text-align: center;
+  }
+
+  /* Die Kacheln der gespeicherten Routinen. auto-fill legt so viele Spalten an, wie
+     bei mindestens 135px Kachelbreite hineinpassen - auf dem Handy sind das zwei,
+     auf breiteren Bildschirmen mehr, ohne eigene Umbruchregeln. */
+  #routinen-kacheln {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 12px;
+    width: 100%;
+  }
+
+  /* Eine Routine-Kachel: große, klar abgegrenzte Fläche, die als Ganzes den Start
+     auslöst (Fitts's Law). Text linksbündig, damit Name und Angaben bei mehreren
+     Kacheln auf einer gemeinsamen Kante beginnen. */
+  .routine-kachel {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 4px;
+    margin: 0;
+    padding: 16px 14px;
+    min-height: 92px;
+    /* Erlaubt der Kachel, schmaler zu werden als ihr längstes Wort - sonst könnte ein
+       langer Routinename die Spalte über die Rasterbreite hinaus aufblähen */
+    min-width: 0;
+    text-align: left;
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    font-size: inherit;
+  }
+
+  .routine-kachel:hover {
+    background-color: rgba(255, 255, 255, 0.22);
+  }
+
+  .kachel-name {
+    font-size: clamp(17px, 4.4vw, 20px);
+    font-weight: bold;
+    /* Lange Namen umbrechen, statt die Kachel zu verbreitern - aber bevorzugt an
+       Wortgrenzen. "break-word" trennt innerhalb eines Wortes nur, wenn das Wort
+       allein nicht in eine Zeile passt; "anywhere" hätte auch dann getrennt, wenn
+       ein Umbruch an der Leerstelle gereicht hätte. */
+    overflow-wrap: break-word;
+  }
+
+  .kachel-info {
+    font-size: clamp(13px, 3.4vw, 15px);
+    opacity: 0.8;
+  }
+
+  /* Im Bearbeiten-Modus bekommen die Kacheln einen deutlich sichtbaren Rahmen: Ein
+     Tipp startet dann nicht, sondern öffnet den Editor - dieser Unterschied muss auf
+     einen Blick erkennbar sein. */
+  body.bearbeiten-aktiv .routine-kachel {
+    outline: 2px dashed rgba(255, 255, 255, 0.7);
+    outline-offset: -4px;
+  }
+
+  /* "Bearbeiten" und "Neue Routine" nebeneinander, gleich breit */
+  #start-aktionen {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+
+  #start-aktionen button,
+  #frei-button {
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: clamp(16px, 4vw, 19px);
+    padding: clamp(12px, 3vw, 16px) 8px;
+  }
+
+  /* Der Bearbeiten-Button zeigt im aktiven Zustand, dass der Modus läuft */
+  body.bearbeiten-aktiv #bearbeiten-button {
+    background-color: #6b7683;
+  }
+
+  /* Der freie Modus ist eine Nebenfunktion und tritt optisch zurück, damit er nicht
+     mit den Routinen um Aufmerksamkeit konkurriert */
+  #frei-button {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+  }
+
+  #frei-button:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+
+  /* ---- Editor ---- */
+
+  #routine-name-eingabe {
+    width: 100%;
+    box-sizing: border-box;
+    padding: clamp(10px, 2.5vw, 13px);
+    border: none;
+    border-radius: 6px;
+    font-size: 16px; /* mindestens 16px, sonst zoomen mobile Browser beim Antippen */
+  }
+
+  #editor-aktionen {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  #editor-aktionen button {
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: clamp(16px, 4vw, 19px);
+    padding: clamp(12px, 3vw, 16px) 8px;
+  }
+
+  /* Löschen ist die einzige unwiderrufliche Aktion und tritt deshalb optisch zurück,
+     statt neben "Speichern" gleichrangig zu erscheinen */
+  #loeschen-button {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+  }
+
+  #loeschen-button:hover {
+    background-color: #8a3a3a;
+  }
+
+  /* ---- Freier Modus ---- */
+
+  /* Anders als Startbildschirm und Editor hat der freie Modus festen, kurzen Inhalt -
+     hier wirkt eine vertikale Mitte ruhiger als ein Block am oberen Rand. Die Regel
+     steht bewusst nach body:not(.ansicht-training) weiter oben: Beide Selektoren sind
+     gleich spezifisch, deshalb entscheidet die Reihenfolge. */
+  body.ansicht-frei {
     align-items: center;
-    gap: clamp(10px, 2vh, 16px);
-    width: clamp(300px, 90vw, 460px);
+  }
+
+  /* Die drei Werte nebeneinander, wie die globalen Felder im Editor */
+  #frei-einstellungen {
+    display: flex;
+    gap: clamp(14px, 3.5vw, 24px);
+    width: 100%;
+  }
+
+  #frei-gesamtdauer {
+    font-size: clamp(15px, 3.8vw, 18px);
+    opacity: 0.85;
+  }
+
+  #frei-start-button {
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: clamp(18px, 4.5vw, 22px);
+    padding: clamp(14px, 3.5vw, 18px) 8px;
+  }
+
+  /* Rückmeldung im Editor, z.B. wenn der Name fehlt */
+  #editor-meldung {
+    font-size: clamp(14px, 3.6vw, 17px);
+    color: #ffd9a0;
+    text-align: center;
+    min-height: 1.2em;
   }
 
   /* Die beiden globalen Einstellungsfelder nebeneinander. Jedes Feld nimmt über
@@ -293,14 +502,6 @@
     opacity: 0.85;
   }
 
-  /* Solange das Training läuft, verschwinden Einstellungen und Presets komplett.
-     Sichtbar bleiben nur Ring, Phasenanzeige und die Steuerbuttons - das ist der
-     einzige Teil, der während einer Übung tatsächlich gebraucht wird. */
-  body.training-laeuft #konfiguration,
-  body.training-laeuft #presets-bereich {
-    display: none;
-  }
-
   .eingabe-feld {
     display: flex;
     flex-direction: column;
@@ -367,27 +568,14 @@
   /* Umhüllt Countdown-Zahl und Fortschrittsring, damit die Zahl mittig im Ring sitzt.
      Deutlich groesser als vorher, da der Ring das wichtigste Element ist und auch aus
      etwas Entfernung (waehrend des Trainings) gut lesbar sein soll. */
+  /* Phase 9: Ring und Countdown erscheinen nur noch in der Trainingsansicht und
+     brauchen dort keine Verkleinerung mehr - der Startbildschirm zeigt sie gar nicht. */
   #countdown-wrapper {
     position: relative;
-    width: clamp(340px, 86vw, 500px);
-    height: clamp(340px, 86vw, 500px);
-    /* Weicher Übergang beim Wechsel zwischen Einrichten und Training (siehe unten),
-       damit der Größenwechsel nicht als Sprung wirkt */
-    transition: width 0.3s ease, height 0.3s ease;
-  }
-
-  /* Solange kein Training läuft, wird der Ring auf etwa die halbe Größe verkleinert.
-     Er zeigt in diesem Moment nur die Startzeit an und braucht den Platz nicht - ohne
-     die Verkleinerung liegen Steuerbuttons und gespeicherte Routinen unterhalb des
-     sichtbaren Bereichs und sind nur durch Scrollen erreichbar. Beim Start wächst er
-     auf die volle Größe, die Trainingsansicht bleibt also unverändert. */
-  body:not(.training-laeuft) #countdown-wrapper {
-    width: clamp(170px, 43vw, 250px);
-    height: clamp(170px, 43vw, 250px);
-  }
-
-  body:not(.training-laeuft) #anzeige {
-    font-size: clamp(40px, 11vw, 65px);
+    /* Quadratisch und nie breiter als der Inhaltsblock (#inhalt), damit der Ring auf
+       breiteren Bildschirmen nicht seitlich darüber hinausragt */
+    width: min(86vw, 460px);
+    height: min(86vw, 460px);
   }
 
   /* Der Ring liegt als SVG hinter der Zahl, gedreht auf "12 Uhr"-Start */
@@ -535,60 +723,6 @@
     min-height: clamp(24px, 6vw, 34px);
   }
 
-  /* Phase 4: Bereich zum Speichern/Laden von Presets */
-  #presets-bereich {
-    width: clamp(300px, 85vw, 440px);
-  }
-
-  .preset-eingabe {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  #preset-name-eingabe {
-    flex: 1;
-    box-sizing: border-box; /* Padding zählt zur Breite dazu statt sie zu vergrößern */
-    padding: clamp(8px, 2vw, 11px);
-    border-radius: 6px;
-    border: none;
-    font-size: clamp(15px, 3.8vw, 18px);
-  }
-
-  #presets-liste {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    max-height: 160px;
-    overflow-y: auto;
-  }
-
-  #presets-liste li {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background-color: rgba(255, 255, 255, 0.08);
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: clamp(13px, 3.2vw, 15px);
-  }
-
-  #presets-liste li span {
-    flex: 1;
-    margin-right: 8px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  #presets-liste button {
-    font-size: clamp(13px, 3.2vw, 15px);
-    padding: 4px 10px;
-    margin: 0 0 0 4px;
-  }
 </style>
 </head>
 <body>
@@ -602,14 +736,43 @@
     </svg>
   </button>
 
+  <!-- Phase 9: Zurück-Pfeil, fest oben links. Führt aus jeder Ansicht zum
+       Startbildschirm zurück - auch mitten im Training, das dabei abgebrochen wird.
+       Auf dem Startbildschirm selbst ist er ausgeblendet (siehe CSS). -->
+  <button id="zurueck-button" aria-label="Zurück zur Übersicht" title="Zurück zur Übersicht">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"></polyline>
+    </svg>
+  </button>
+
   <!-- Umhüllt den gesamten Inhalt als vertikal zentrierten Block (siehe #inhalt im CSS) -->
   <div id="inhalt">
 
   <h1>Intervalltimer</h1>
 
-  <!-- Phase 7b: Einstellungen bestehen jetzt aus der Übungsliste (wird per JavaScript
-       aufgebaut, siehe zeigeUebungenAn) und zwei Werten, die für alle Übungen gelten. -->
-  <div id="konfiguration">
+  <!-- ============ ANSICHT: STARTBILDSCHIRM ============
+       Kacheln der gespeicherten Routinen (per JavaScript aufgebaut, siehe
+       zeigeRoutinenAn). Ein Tipp startet die Routine - oder öffnet sie zum Bearbeiten,
+       solange der Bearbeiten-Modus aktiv ist. -->
+  <div id="ansicht-start" class="ansicht">
+    <div id="start-hinweis"></div>
+
+    <div id="routinen-kacheln"></div>
+
+    <div id="start-aktionen">
+      <button id="bearbeiten-button">Bearbeiten</button>
+      <button id="neu-button">Neue Routine</button>
+    </div>
+
+    <button id="frei-button">Freier Modus</button>
+  </div>
+
+  <!-- ============ ANSICHT: EDITOR ============
+       Eine Routine anlegen oder ändern. Der Name ist Pflicht, weil eine Kachel ohne
+       Beschriftung auf dem Startbildschirm nicht wiederzuerkennen wäre. -->
+  <div id="ansicht-editor" class="ansicht">
+    <input type="text" id="routine-name-eingabe" placeholder="Name der Routine (z.B. Dehnroutine Morgen)">
+
     <ul id="uebungen-liste"></ul>
 
     <div id="routine-fuss">
@@ -629,7 +792,42 @@
         <input type="number" id="seitenwechsel-dauer-eingabe" value="5" min="0">
       </div>
     </div>
+
+    <div id="editor-meldung"></div>
+
+    <div id="editor-aktionen">
+      <button id="speichern-button">Speichern</button>
+      <button id="loeschen-button">Routine löschen</button>
+    </div>
   </div>
+
+  <!-- ============ ANSICHT: FREIER MODUS ============
+       Ein einfacher Intervalltimer ohne Übungsnamen und ohne Routinen: gleich lange
+       Übungen im Wechsel mit gleich langen Pausen, so oft wie eingestellt. Entspricht
+       der App, wie sie vor der Übungsliste funktioniert hat. -->
+  <div id="ansicht-frei" class="ansicht">
+    <div id="frei-einstellungen">
+      <div class="eingabe-feld">
+        <label for="frei-uebung-eingabe">Übung (Sek.)</label>
+        <input type="number" id="frei-uebung-eingabe" value="30" min="1">
+      </div>
+      <div class="eingabe-feld">
+        <label for="frei-pause-eingabe">Pause (Sek.)</label>
+        <input type="number" id="frei-pause-eingabe" value="15" min="1">
+      </div>
+      <div class="eingabe-feld">
+        <label for="frei-runden-eingabe">Runden</label>
+        <input type="number" id="frei-runden-eingabe" value="5" min="1">
+      </div>
+    </div>
+
+    <div id="frei-gesamtdauer"></div>
+
+    <button id="frei-start-button">Start</button>
+  </div>
+
+  <!-- ============ ANSICHT: TRAINING ============ -->
+  <div id="ansicht-training" class="ansicht">
 
   <!-- Phasen- und Rundenanzeige eng zusammen, statt mit dem großen Standardabstand -->
   <div id="status-anzeige">
@@ -682,14 +880,7 @@
     </div>
   </div>
 
-  <!-- Phase 4: Presets speichern, laden und löschen -->
-  <div id="presets-bereich">
-    <div class="preset-eingabe">
-      <input type="text" id="preset-name-eingabe" placeholder="Name für Preset (z.B. Dehnroutine Morgen)">
-      <button id="preset-speichern-button">Speichern</button>
-    </div>
-    <ul id="presets-liste"></ul>
-  </div>
+  </div> <!-- Ende #ansicht-training -->
 
   </div> <!-- Ende #inhalt -->
 
@@ -767,22 +958,43 @@
     // Vibration ist davon bewusst nicht betroffen (bleibt als haptisches Feedback erhalten).
     let stummgeschaltet = false;
 
-    // Phase 4 / 7b: die Schlüssel, unter denen im localStorage gespeichert wird.
-    // Mit der Übungsliste hat sich der Aufbau eines Presets grundlegend geändert,
-    // deshalb ein neuer Schlüssel. Der alte wird beim Start einmal entfernt, damit
-    // keine unbrauchbaren Daten im Browser zurückbleiben (die alten Presets sollten
-    // laut Absprache nicht übernommen werden).
-    const PRESETS_SPEICHER_SCHLUESSEL = "intervalltimer-routinen";
-    const ALTER_PRESETS_SCHLUESSEL = "intervalltimer-presets";
+    // Phase 9: Unter diesem Schlüssel liegen die gespeicherten Routinen - also genau
+    // das, was der Startbildschirm als Kacheln zeigt.
+    const ROUTINEN_SPEICHER_SCHLUESSEL = "intervalltimer-routinen";
 
-    // Zusätzlich wird die gerade eingestellte Routine automatisch gespeichert. Ohne das
-    // müsste die komplette Übungsliste nach jedem Schließen der App neu eingetippt oder
-    // aus einem Preset geladen werden.
-    const AKTUELLE_ROUTINE_SCHLUESSEL = "intervalltimer-aktuelle-routine";
+    // Speicherplätze früherer Fassungen, die beim Start einmalig geräumt werden.
+    // "intervalltimer-presets" stammt aus der Zeit vor der Übungsliste;
+    // "intervalltimer-aktuelle-routine" war die unbenannte Arbeitsliste aus Phase 7b -
+    // im Kachel-Modell gibt es nur noch benannte Routinen, und die alte Arbeitsliste
+    // sollte laut Absprache nicht übernommen werden.
+    const ALTE_SCHLUESSEL = ["intervalltimer-presets", "intervalltimer-aktuelle-routine"];
 
-    // Phase 4: die Liste aller gespeicherten Presets, z.B.
+    // Die zuletzt im freien Modus eingestellten Werte
+    const FREIER_MODUS_SCHLUESSEL = "intervalltimer-frei";
+
+    // Phase 9: alle gespeicherten Routinen - das sind gleichzeitig die Kacheln auf dem
+    // Startbildschirm, z.B.
     // [{ name: "Dehnroutine Morgen", uebungen: [...], pauseDauer: 15, seitenwechselDauer: 5 }, ...]
-    let presets = [];
+    let routinen = [];
+
+    // Phase 9: welche Ansicht ist sichtbar? "start", "editor", "training" oder "frei"
+    let aktuelleAnsicht = "start";
+
+    // Phase 9: Solange der Bearbeiten-Modus läuft, öffnet ein Tipp auf eine Kachel den
+    // Editor, statt die Routine zu starten.
+    let bearbeitenModus = false;
+
+    // Phase 9: Welche Routine der Editor gerade bearbeitet - Index in routinen[],
+    // oder null für eine neu angelegte Routine.
+    let bearbeiteterIndex = null;
+
+    // Phase 9: Stand der Routine beim Öffnen des Editors (als Text), um beim Verlassen
+    // zu erkennen, ob es ungespeicherte Änderungen gibt.
+    let entwurfBeimOeffnen = "";
+
+    // Wie der Fortschritt gezählt wird: In einer Routine sind es Übungen, im freien
+    // Modus Runden. Wird beim Starten gesetzt und nur für die Anzeige gebraucht.
+    let zaehlerBezeichnung = "Übung";
 
     // ---- Referenzen auf die HTML-Elemente holen ----
     const uebungenListe = document.getElementById("uebungen-liste");
@@ -799,9 +1011,26 @@
     const pauseButton = document.getElementById("pause-button");
     const resetButton = document.getElementById("reset-button");
     const stummButton = document.getElementById("stumm-button");
-    const presetNameEingabe = document.getElementById("preset-name-eingabe");
-    const presetSpeichernButton = document.getElementById("preset-speichern-button");
-    const presetsListe = document.getElementById("presets-liste");
+
+    // Phase 9: Startbildschirm und Editor
+    const zurueckButton = document.getElementById("zurueck-button");
+    const seitenTitel = document.querySelector("h1");
+    const startHinweis = document.getElementById("start-hinweis");
+    const routinenKacheln = document.getElementById("routinen-kacheln");
+    const bearbeitenButton = document.getElementById("bearbeiten-button");
+    const neuButton = document.getElementById("neu-button");
+    const freiButton = document.getElementById("frei-button");
+    const routineNameEingabe = document.getElementById("routine-name-eingabe");
+    const editorMeldung = document.getElementById("editor-meldung");
+    const speichernButton = document.getElementById("speichern-button");
+    const loeschenButton = document.getElementById("loeschen-button");
+
+    // Phase 9: freier Modus
+    const freiUebungEingabe = document.getElementById("frei-uebung-eingabe");
+    const freiPauseEingabe = document.getElementById("frei-pause-eingabe");
+    const freiRundenEingabe = document.getElementById("frei-runden-eingabe");
+    const freiGesamtdauer = document.getElementById("frei-gesamtdauer");
+    const freiStartButton = document.getElementById("frei-start-button");
 
     // Liest eine Zahl aus einem Eingabefeld und sorgt dafür, dass sie mindestens "minimum" ist
     function holeZahlAusEingabe(element, minimum) {
@@ -853,10 +1082,15 @@
       return plan;
     }
 
-    // Baut den Ablaufplan aus dem, was gerade eingestellt ist.
-    function erzeugeAblaufplan() {
-      gesamtUebungen = uebungen.length; // für die Anzeige "Übung X von Y"
-      return baueAblaufplan(uebungen, holeZahlAusEingabe(pauseDauerEingabe, 1), holeZahlAusEingabe(seitenwechselDauerEingabe, 0));
+    // Phase 9: Baut den Ablaufplan aus dem, was gerade im Editor steht. Wird nur für
+    // die Vorschau der Gesamtdauer gebraucht - gestartet wird immer aus einer
+    // gespeicherten Routine oder aus dem freien Modus.
+    function ablaufplanAusEditor() {
+      return baueAblaufplan(
+        uebungen,
+        holeZahlAusEingabe(pauseDauerEingabe, 1),
+        holeZahlAusEingabe(seitenwechselDauerEingabe, 0)
+      );
     }
 
     // Addiert die Dauer aller Abschnitte eines Plans - also wie lange das Training
@@ -972,26 +1206,12 @@
         setzePhasenFarbe("phase-pause");
       }
 
-      rundenAnzeige.textContent = "Übung " + abschnitt.nummer + " von " + gesamtUebungen;
+      rundenAnzeige.textContent = zaehlerBezeichnung + " " + abschnitt.nummer + " von " + gesamtUebungen;
     }
 
-    // Sperrt bzw. entsperrt alles, was während eines laufenden Trainings nicht
-    // verändert werden darf. Phase 7b: Übungsliste und Presets werden dabei zusätzlich
-    // komplett ausgeblendet (siehe body.training-laeuft im CSS), damit während der
-    // Übung nur Ring und Steuerbuttons sichtbar sind.
-    function eingabenAktivieren(aktiv) {
-      document.body.classList.toggle("training-laeuft", !aktiv);
-
-      pauseDauerEingabe.disabled = !aktiv;
-      seitenwechselDauerEingabe.disabled = !aktiv;
-      uebungHinzufuegenButton.disabled = !aktiv;
-
-      // Phase 4: Preset-Speichern ebenfalls sperren, solange der Timer läuft
-      presetNameEingabe.disabled = !aktiv;
-      presetSpeichernButton.disabled = !aktiv;
-      zeigeUebungenAn(); // Felder der Übungszeilen passend sperren/entsperren
-      zeigePresetsAn(); // baut die Liste neu auf, damit "Laden"/"Löschen" passend gesperrt sind
-    }
+    // Phase 9: Das Sperren der Eingaben während des Trainings ist entfallen. Editor und
+    // Trainingsansicht sind jetzt getrennte Ansichten - während des Trainings ist der
+    // Editor gar nicht sichtbar, es gibt also nichts zu sperren.
 
     // ---- Phase 7b: Die Übungsliste bedienen ----
 
@@ -1120,19 +1340,19 @@
       if (uebungen.length === 0) {
         gesamtdauerAnzeige.textContent = "";
       } else {
-        gesamtdauerAnzeige.textContent = "Gesamt " + formatiereZeit(berechneGesamtdauer(ablaufplan));
+        gesamtdauerAnzeige.textContent = "Gesamt " + formatiereZeit(berechneGesamtdauer(ablaufplanAusEditor()));
       }
     }
 
-    // Wird nach jeder Änderung an der Routine aufgerufen.
+    // Wird nach jeder Änderung im Editor aufgerufen.
     // neuAufbauen = true, wenn sich die Struktur geändert hat (Anzahl oder Reihenfolge
     // der Übungen) und die sichtbare Liste deshalb neu gezeichnet werden muss.
     function routineGeaendert(neuAufbauen) {
       if (neuAufbauen) {
         zeigeUebungenAn();
       }
-      speichereAktuelleRoutine();
-      uebernehmeEinstellungen();
+      aktualisiereGesamtdauerAnzeige();
+      editorMeldung.textContent = ""; // eine frühere Fehlermeldung ist nach der Änderung überholt
     }
 
     function fuegeUebungHinzu() {
@@ -1168,50 +1388,6 @@
       routineGeaendert(true);
     }
 
-    // Speichert die gerade eingestellte Routine, damit sie beim nächsten Öffnen der App
-    // noch da ist (sonst müsste die Liste jedes Mal neu eingetippt werden).
-    function speichereAktuelleRoutine() {
-      // In try/catch, weil das Schreiben in den Browserspeicher fehlschlagen kann
-      // (z.B. voller Speicher oder Browser mit gesperrtem Seitenspeicher). Der Timer
-      // selbst soll dann trotzdem normal weiterlaufen - nur eben ohne zu merken,
-      // wie die Routine zuletzt aussah.
-      try {
-        localStorage.setItem(
-          AKTUELLE_ROUTINE_SCHLUESSEL,
-          JSON.stringify({
-            uebungen: uebungen,
-            pauseDauer: holeZahlAusEingabe(pauseDauerEingabe, 1),
-            seitenwechselDauer: holeZahlAusEingabe(seitenwechselDauerEingabe, 0)
-          })
-        );
-      } catch (fehler) {
-        // bewusst ignoriert - siehe Kommentar oben
-      }
-    }
-
-    // Holt die zuletzt eingestellte Routine zurück. Ist nichts gespeichert (oder sind die
-    // Daten unbrauchbar), wird mit einer einzelnen 30-Sekunden-Übung begonnen.
-    function ladeAktuelleRoutine() {
-      const gespeicherterText = localStorage.getItem(AKTUELLE_ROUTINE_SCHLUESSEL);
-      let gelesen = null;
-
-      if (gespeicherterText !== null) {
-        try {
-          gelesen = JSON.parse(gespeicherterText);
-        } catch (fehler) {
-          gelesen = null; // beschädigte Daten ignorieren statt die App blockieren
-        }
-      }
-
-      if (gelesen && Array.isArray(gelesen.uebungen) && gelesen.uebungen.length > 0) {
-        uebungen = gelesen.uebungen.map(saubereUebung);
-        pauseDauerEingabe.value = gelesen.pauseDauer;
-        seitenwechselDauerEingabe.value = gelesen.seitenwechselDauer;
-      } else {
-        uebungen = [{ name: "", dauer: 30, beideSeiten: false }];
-      }
-    }
-
     // Bringt einen gespeicherten Eintrag in die erwartete Form. Schützt davor, dass
     // unvollständige oder manipulierte Daten aus dem Speicher später zu Abstürzen führen.
     function saubereUebung(eintrag) {
@@ -1223,113 +1399,381 @@
       };
     }
 
-    // ---- Phase 4: Presets speichern, laden und löschen (über localStorage) ----
+    // ---- Phase 9: Routinen speichern und laden (über localStorage) ----
 
-    // Liest die gespeicherten Presets beim Start der Seite aus dem localStorage.
-    // localStorage speichert nur Text, deshalb müssen wir mit JSON.parse wieder
-    // ein normales JavaScript-Array daraus machen.
-    function ladePresetsAusSpeicher() {
-      // Phase 7b: Presets aus der Zeit vor der Übungsliste sind mit dem neuen Aufbau
-      // nicht mehr verwendbar und sollten laut Absprache auch nicht übernommen werden -
-      // deshalb wird der alte Speicherplatz einmalig geräumt.
-      localStorage.removeItem(ALTER_PRESETS_SCHLUESSEL);
-
-      const gespeicherterText = localStorage.getItem(PRESETS_SPEICHER_SCHLUESSEL);
-      if (gespeicherterText === null) {
-        presets = []; // noch nichts gespeichert
-        return;
-      }
-
-      try {
-        presets = JSON.parse(gespeicherterText);
-      } catch (fehler) {
-        presets = []; // beschädigte Daten ignorieren statt die App blockieren
-      }
-    }
-
-    // Schreibt die aktuelle Preset-Liste in den localStorage (als JSON-Text),
-    // damit sie auch nach dem Schließen des Browsers erhalten bleibt.
-    function speicherePresetsInSpeicher() {
-      localStorage.setItem(PRESETS_SPEICHER_SCHLUESSEL, JSON.stringify(presets));
-    }
-
-    // Baut die sichtbare Preset-Liste (die <ul>) komplett neu auf, ausgehend vom
-    // aktuellen Inhalt von presets[]. Wird nach jeder Änderung erneut aufgerufen.
-    function zeigePresetsAn() {
-      presetsListe.innerHTML = ""; // Liste leeren, bevor sie neu aufgebaut wird
-
-      presets.forEach(function (preset, index) {
-        const listenEintrag = document.createElement("li");
-
-        // Kurzinfo zum Inhalt: Anzahl der Übungen und wie lange die Routine läuft.
-        // Die Gesamtdauer wird dafür aus den gespeicherten Daten durchgerechnet, ohne
-        // das Preset laden zu müssen.
-        const anzahl = preset.uebungen.length;
-        const dauer = berechneGesamtdauer(baueAblaufplan(preset.uebungen, preset.pauseDauer, preset.seitenwechselDauer));
-
-        const nameText = document.createElement("span");
-        nameText.textContent =
-          preset.name + " (" + anzahl + (anzahl === 1 ? " Übung · " : " Übungen · ") + formatiereZeit(dauer) + ")";
-
-        const ladenButton = document.createElement("button");
-        ladenButton.textContent = "Laden";
-        ladenButton.disabled = intervallId !== null; // während der Timer läuft nicht ladbar
-        ladenButton.addEventListener("click", function () {
-          ladePreset(index);
-        });
-
-        const loeschenButton = document.createElement("button");
-        loeschenButton.textContent = "Löschen";
-        loeschenButton.disabled = intervallId !== null;
-        loeschenButton.addEventListener("click", function () {
-          loeschePreset(index);
-        });
-
-        listenEintrag.appendChild(nameText);
-        listenEintrag.appendChild(ladenButton);
-        listenEintrag.appendChild(loeschenButton);
-        presetsListe.appendChild(listenEintrag);
+    // Liest die gespeicherten Routinen beim Start der Seite. localStorage speichert nur
+    // Text, deshalb müssen wir mit JSON.parse wieder ein Array daraus machen.
+    function ladeRoutinenAusSpeicher() {
+      // Speicherplätze früherer Fassungen einmalig räumen (siehe ALTE_SCHLUESSEL)
+      ALTE_SCHLUESSEL.forEach(function (schluessel) {
+        try {
+          localStorage.removeItem(schluessel);
+        } catch (fehler) {
+          // kein Zugriff auf den Speicher - dann bleibt der alte Eintrag eben liegen
+        }
       });
-    }
 
-    // Speichert die komplette aktuelle Routine (Übungsliste plus die beiden globalen
-    // Werte) als neues Preset
-    function speicherePreset() {
-      const name = presetNameEingabe.value.trim();
-      if (name === "" || uebungen.length === 0) {
-        return; // ohne Namen oder ohne Übungen kein Preset anlegen
+      let gelesen = null;
+      try {
+        const text = localStorage.getItem(ROUTINEN_SPEICHER_SCHLUESSEL);
+        gelesen = text === null ? null : JSON.parse(text);
+      } catch (fehler) {
+        gelesen = null; // beschädigte Daten ignorieren statt die App blockieren
       }
 
-      presets.push({
-        name: name,
-        // Echte Kopien der Übungen ablegen, damit spätere Änderungen an der aktuellen
-        // Liste das gespeicherte Preset nicht nachträglich mit verändern
-        uebungen: uebungen.map(saubereUebung),
+      routinen = Array.isArray(gelesen) ? gelesen.map(saubereRoutine).filter(Boolean) : [];
+    }
+
+    // Bringt eine gespeicherte Routine in die erwartete Form. Schützt davor, dass
+    // unvollständige Daten aus dem Speicher später zu Abstürzen führen. Gibt null
+    // zurück, wenn der Eintrag unbrauchbar ist (wird dann übersprungen).
+    function saubereRoutine(eintrag) {
+      if (!eintrag || !Array.isArray(eintrag.uebungen) || eintrag.uebungen.length === 0) {
+        return null;
+      }
+
+      const pause = parseInt(eintrag.pauseDauer, 10);
+      const wechsel = parseInt(eintrag.seitenwechselDauer, 10);
+
+      return {
+        name: typeof eintrag.name === "string" && eintrag.name.trim() !== "" ? eintrag.name : "Routine",
+        uebungen: eintrag.uebungen.map(saubereUebung),
+        pauseDauer: isNaN(pause) || pause < 1 ? 15 : pause,
+        seitenwechselDauer: isNaN(wechsel) || wechsel < 0 ? 5 : wechsel
+      };
+    }
+
+    // Schreibt die Routinen in den localStorage, damit sie das Schließen der App überleben
+    function speichereRoutinen() {
+      try {
+        localStorage.setItem(ROUTINEN_SPEICHER_SCHLUESSEL, JSON.stringify(routinen));
+      } catch (fehler) {
+        // Speichern fehlgeschlagen (z.B. voller oder gesperrter Seitenspeicher).
+        // Die App bleibt benutzbar, die Routine ist nach dem Schließen aber weg.
+      }
+    }
+
+    // ---- Phase 9: Zwischen den Ansichten wechseln ----
+
+    // Schaltet die sichtbare Ansicht um. Genau eine der vier Ansichten ist sichtbar;
+    // gesteuert wird das über eine Klasse am <body>, den passenden Titel setzt diese
+    // Funktion gleich mit (Orientierung, wo man sich befindet).
+    function zeigeAnsicht(name) {
+      aktuelleAnsicht = name;
+
+      document.body.classList.remove("ansicht-start", "ansicht-editor", "ansicht-training", "ansicht-frei");
+      document.body.classList.add("ansicht-" + name);
+
+      if (name === "start") {
+        seitenTitel.textContent = "Intervalltimer";
+      } else if (name === "editor") {
+        seitenTitel.textContent = bearbeiteterIndex === null ? "Neue Routine" : "Routine bearbeiten";
+      } else if (name === "frei") {
+        seitenTitel.textContent = "Freier Modus";
+      } else {
+        seitenTitel.textContent = "Intervalltimer";
+      }
+
+      // Außerhalb des Trainings darf keine Phasenfarbe stehen bleiben
+      if (name !== "training") {
+        setzePhasenFarbe("phase-uebung");
+      }
+    }
+
+    // Der Zurück-Pfeil oben links. Führt immer zum Startbildschirm - bricht dabei ein
+    // laufendes Training ab bzw. fragt im Editor nach, wenn Änderungen verloren gingen.
+    function geheZurueck() {
+      if (aktuelleAnsicht === "editor" && entwurfHatAenderungen()) {
+        if (!confirm("Änderungen an dieser Routine verwerfen?")) {
+          return;
+        }
+      }
+
+      if (aktuelleAnsicht === "training" || aktuelleAnsicht === "frei") {
+        clearInterval(intervallId);
+        intervallId = null;
+      }
+
+      zeigeStartbildschirm();
+    }
+
+    // ---- Phase 9: Startbildschirm ----
+
+    function zeigeStartbildschirm() {
+      bearbeitenModus = false;
+      document.body.classList.remove("bearbeiten-aktiv");
+      zeigeRoutinenAn();
+      zeigeAnsicht("start");
+    }
+
+    // Baut die Kacheln aus routinen[] neu auf und passt Hinweistext sowie den
+    // Bearbeiten-Button an den aktuellen Zustand an.
+    function zeigeRoutinenAn() {
+      routinenKacheln.innerHTML = "";
+
+      routinen.forEach(function (routine, index) {
+        const kachel = document.createElement("button");
+        kachel.className = "routine-kachel";
+
+        const name = document.createElement("span");
+        name.className = "kachel-name";
+        name.textContent = routine.name;
+
+        const info = document.createElement("span");
+        info.className = "kachel-info";
+        const anzahl = routine.uebungen.length;
+        const dauer = berechneGesamtdauer(baueAblaufplan(routine.uebungen, routine.pauseDauer, routine.seitenwechselDauer));
+        info.textContent = anzahl + (anzahl === 1 ? " Übung · " : " Übungen · ") + formatiereZeit(dauer);
+
+        kachel.appendChild(name);
+        kachel.appendChild(info);
+
+        // Ein Tipp startet die Routine - oder öffnet sie zum Bearbeiten, solange der
+        // Bearbeiten-Modus läuft. Welcher Fall gilt, wird erst beim Klick geprüft,
+        // damit die Kacheln beim Umschalten des Modus nicht neu gebaut werden müssen.
+        kachel.addEventListener("click", function () {
+          if (bearbeitenModus) {
+            oeffneEditor(index);
+          } else {
+            starteRoutine(index);
+          }
+        });
+
+        routinenKacheln.appendChild(kachel);
+      });
+
+      if (routinen.length === 0) {
+        startHinweis.textContent = "Noch keine Routine gespeichert.";
+      } else if (bearbeitenModus) {
+        startHinweis.textContent = "Welche Routine möchtest du bearbeiten?";
+      } else {
+        startHinweis.textContent = "Tippe eine Routine an, um sie zu starten.";
+      }
+
+      // Ohne Routinen gibt es nichts zu bearbeiten
+      bearbeitenButton.disabled = routinen.length === 0;
+      bearbeitenButton.textContent = bearbeitenModus ? "Fertig" : "Bearbeiten";
+    }
+
+    function schalteBearbeitenModusUm() {
+      bearbeitenModus = !bearbeitenModus;
+      document.body.classList.toggle("bearbeiten-aktiv", bearbeitenModus);
+      zeigeRoutinenAn();
+    }
+
+    // ---- Phase 9: Editor ----
+
+    // Öffnet den Editor. index = null für eine neue Routine, sonst der Index in routinen[].
+    function oeffneEditor(index) {
+      bearbeiteterIndex = index;
+
+      if (index === null) {
+        // Neue Routine: mit einer einzelnen 30-Sekunden-Übung beginnen, damit sofort
+        // etwas zum Bearbeiten da ist
+        routineNameEingabe.value = "";
+        uebungen = [{ name: "", dauer: 30, beideSeiten: false }];
+        pauseDauerEingabe.value = 15;
+        seitenwechselDauerEingabe.value = 5;
+      } else {
+        const routine = routinen[index];
+        routineNameEingabe.value = routine.name;
+        // Kopien bearbeiten, damit ein Abbruch die gespeicherte Routine nicht verändert
+        uebungen = routine.uebungen.map(saubereUebung);
+        pauseDauerEingabe.value = routine.pauseDauer;
+        seitenwechselDauerEingabe.value = routine.seitenwechselDauer;
+      }
+
+      // "Routine löschen" gibt es nur bei einer bereits gespeicherten Routine
+      loeschenButton.style.display = index === null ? "none" : "";
+
+      editorMeldung.textContent = "";
+      zeigeUebungenAn();
+      aktualisiereGesamtdauerAnzeige();
+      entwurfBeimOeffnen = entwurfAlsText(); // Ausgangsstand für die Änderungsprüfung
+      zeigeAnsicht("editor");
+    }
+
+    // Der aktuelle Editor-Inhalt als Text - dient nur dem Vergleich, ob sich seit dem
+    // Öffnen etwas geändert hat.
+    function entwurfAlsText() {
+      return JSON.stringify({
+        name: routineNameEingabe.value.trim(),
+        uebungen: uebungen,
         pauseDauer: holeZahlAusEingabe(pauseDauerEingabe, 1),
         seitenwechselDauer: holeZahlAusEingabe(seitenwechselDauerEingabe, 0)
       });
-
-      speicherePresetsInSpeicher();
-      zeigePresetsAn();
-      presetNameEingabe.value = ""; // Eingabefeld für den nächsten Namen leeren
     }
 
-    // Übernimmt ein gespeichertes Preset als aktuelle Routine
-    function ladePreset(index) {
-      const preset = presets[index];
-      uebungen = preset.uebungen.map(saubereUebung); // Kopien, nicht das Original verändern
-      pauseDauerEingabe.value = preset.pauseDauer;
-      seitenwechselDauerEingabe.value = preset.seitenwechselDauer;
-      zeigeUebungenAn();
-      speichereAktuelleRoutine();
-      setzeZurueck();
+    function entwurfHatAenderungen() {
+      return entwurfAlsText() !== entwurfBeimOeffnen;
     }
 
-    // Entfernt ein Preset aus der Liste und aktualisiert den localStorage
-    function loeschePreset(index) {
-      presets.splice(index, 1);
-      speicherePresetsInSpeicher();
-      zeigePresetsAn();
+    // Übernimmt den Editor-Inhalt in routinen[] und kehrt zum Startbildschirm zurück
+    function speichereRoutineAusEditor() {
+      const name = routineNameEingabe.value.trim();
+
+      if (name === "") {
+        editorMeldung.textContent = "Bitte gib der Routine einen Namen.";
+        routineNameEingabe.focus();
+        return;
+      }
+
+      if (uebungen.length === 0) {
+        editorMeldung.textContent = "Bitte füge mindestens eine Übung hinzu.";
+        return;
+      }
+
+      const routine = {
+        name: name,
+        uebungen: uebungen.map(saubereUebung),
+        pauseDauer: holeZahlAusEingabe(pauseDauerEingabe, 1),
+        seitenwechselDauer: holeZahlAusEingabe(seitenwechselDauerEingabe, 0)
+      };
+
+      if (bearbeiteterIndex === null) {
+        routinen.push(routine);
+      } else {
+        routinen[bearbeiteterIndex] = routine;
+      }
+
+      speichereRoutinen();
+      zeigeStartbildschirm();
+    }
+
+    // Löscht die gerade bearbeitete Routine. Nachfrage per confirm, weil das nicht
+    // rückgängig zu machen ist.
+    function loescheRoutineAusEditor() {
+      if (bearbeiteterIndex === null) {
+        return; // eine noch nicht gespeicherte Routine kann nicht gelöscht werden
+      }
+
+      if (!confirm('Routine "' + routinen[bearbeiteterIndex].name + '" wirklich löschen?')) {
+        return;
+      }
+
+      routinen.splice(bearbeiteterIndex, 1);
+      speichereRoutinen();
+      zeigeStartbildschirm();
+    }
+
+    // ---- Phase 9: Ein Training starten ----
+
+    // Gemeinsamer Einstieg für beide Betriebsarten: übernimmt einen fertigen Ablaufplan,
+    // stellt die Trainingsansicht darauf ein und startet den Countdown.
+    // anzahl = Nenner der Fortschrittsanzeige, bezeichnung = "Übung" oder "Runde".
+    function starteAblauf(plan, anzahl, bezeichnung) {
+      if (plan.length === 0) {
+        return;
+      }
+
+      ablaufplan = plan;
+      gesamtUebungen = anzahl;
+      zaehlerBezeichnung = bezeichnung;
+      aktuellerAbschnittIndex = 0;
+
+      uebernehmeAktuellenAbschnitt();
+      fertigMeldung.textContent = "";
+      aktualisiereAnzeige();
+      aktualisierePhaseAnzeige();
+      stoppeRingAnimationSofort();
+
+      startButton.disabled = false;
+      pauseButton.disabled = true;
+
+      zeigeAnsicht("training");
+      starteTimer();
+    }
+
+    function starteRoutine(index) {
+      const routine = routinen[index];
+      starteAblauf(
+        baueAblaufplan(routine.uebungen, routine.pauseDauer, routine.seitenwechselDauer),
+        routine.uebungen.length,
+        "Übung"
+      );
+    }
+
+    // ---- Phase 9: Freier Modus ----
+
+    // Baut den Ablauf des freien Modus: gleich lange Übungen im Wechsel mit gleich
+    // langen Pausen, nach der letzten Übung keine Pause mehr. Das ist genau der Ablauf,
+    // den die App vor der Übungsliste hatte - dass er sich hier in wenigen Zeilen
+    // ausdrücken lässt, ist der Nutzen des Ablaufplans aus Phase 7a.
+    function baueFreienPlan(uebungDauer, pauseDauer, runden) {
+      const plan = [];
+
+      for (let runde = 1; runde <= runden; runde++) {
+        plan.push({ typ: "uebung", dauer: uebungDauer, nummer: runde, name: "Übung", seite: null });
+
+        if (runde < runden) {
+          plan.push({ typ: "pause", dauer: pauseDauer, nummer: runde, name: "Übung", seite: null });
+        }
+      }
+
+      return plan;
+    }
+
+    function freierPlanAusEingaben() {
+      return baueFreienPlan(
+        holeZahlAusEingabe(freiUebungEingabe, 1),
+        holeZahlAusEingabe(freiPauseEingabe, 1),
+        holeZahlAusEingabe(freiRundenEingabe, 1)
+      );
+    }
+
+    function aktualisiereFreieGesamtdauer() {
+      freiGesamtdauer.textContent = "Gesamt " + formatiereZeit(berechneGesamtdauer(freierPlanAusEingaben()));
+    }
+
+    function oeffneFreienModus() {
+      aktualisiereFreieGesamtdauer();
+      zeigeAnsicht("frei");
+    }
+
+    function starteFreienModus() {
+      speichereFreieWerte();
+      // Im freien Modus zählt die Anzeige Runden, nicht Übungen
+      starteAblauf(freierPlanAusEingaben(), holeZahlAusEingabe(freiRundenEingabe, 1), "Runde");
+    }
+
+    // Die drei Werte des freien Modus überleben das Schließen der App, damit sie nicht
+    // jedes Mal neu eingestellt werden müssen.
+    function speichereFreieWerte() {
+      try {
+        localStorage.setItem(
+          FREIER_MODUS_SCHLUESSEL,
+          JSON.stringify({
+            uebungDauer: holeZahlAusEingabe(freiUebungEingabe, 1),
+            pauseDauer: holeZahlAusEingabe(freiPauseEingabe, 1),
+            runden: holeZahlAusEingabe(freiRundenEingabe, 1)
+          })
+        );
+      } catch (fehler) {
+        // Speichern fehlgeschlagen - die Werte gelten dann nur für diese Sitzung
+      }
+    }
+
+    function ladeFreieWerte() {
+      let gelesen = null;
+      try {
+        const text = localStorage.getItem(FREIER_MODUS_SCHLUESSEL);
+        gelesen = text === null ? null : JSON.parse(text);
+      } catch (fehler) {
+        gelesen = null; // beschädigte Daten ignorieren, die Vorgabewerte bleiben stehen
+      }
+
+      if (!gelesen) {
+        return;
+      }
+
+      // Nur brauchbare Zahlen übernehmen, sonst bleibt der Vorgabewert aus dem HTML
+      [[freiUebungEingabe, gelesen.uebungDauer, 1], [freiPauseEingabe, gelesen.pauseDauer, 1],
+       [freiRundenEingabe, gelesen.runden, 1]].forEach(function (eintrag) {
+        const zahl = parseInt(eintrag[1], 10);
+        if (!isNaN(zahl) && zahl >= eintrag[2]) {
+          eintrag[0].value = zahl;
+        }
+      });
     }
 
     // ---- Phase 3: akustische und haptische Signale ----
@@ -1512,7 +1956,8 @@
       fertigMeldung.textContent = "Training abgeschlossen!";
       startButton.disabled = false;
       pauseButton.disabled = true;
-      eingabenAktivieren(true);
+      // Phase 9: Die Ansicht bleibt bewusst stehen, damit die Abschlussmeldung lesbar
+      // ist. Zurück zur Übersicht geht es über den Pfeil oben links.
     }
 
     // Startet den Countdown
@@ -1535,7 +1980,6 @@
 
       startButton.disabled = true;
       pauseButton.disabled = false;
-      eingabenAktivieren(false); // während der Timer läuft, keine Änderung der Einstellungen erlauben
     }
 
     // Pausiert den Countdown, ohne die verbleibende Zeit oder Runde zu verlieren
@@ -1548,46 +1992,27 @@
       pauseButton.disabled = true;
     }
 
-    // Phase 7a/7b: Baut den Ablaufplan aus den aktuellen Einstellungen neu auf und
-    // stellt die Anzeige auf dessen Anfang. Bewusst getrennt von setzeZurueck(): Diese
-    // Funktion rührt die Bedienoberfläche nicht an und kann deshalb auch bei jedem
-    // Tastendruck in einem Eingabefeld aufgerufen werden, ohne den Tastaturfokus zu
-    // stören.
-    function uebernehmeEinstellungen() {
-      ablaufplan = erzeugeAblaufplan();
-      aktuellerAbschnittIndex = 0;
-      aktualisiereGesamtdauerAnzeige();
-
-      if (ablaufplan.length === 0) {
-        // Ohne Übungen gibt es nichts anzuzeigen und nichts zu starten
-        verbleibendeSekunden = 0;
-        aktuellePhaseDauer = 0;
-        phaseAnzeige.textContent = "KEINE ÜBUNG";
-        rundenAnzeige.textContent = "Füge unten eine Übung hinzu";
-        setzePhasenFarbe("phase-uebung");
-        aktualisiereAnzeige();
-        stoppeRingAnimationSofort();
-        startButton.disabled = true;
-        return;
-      }
-
-      uebernehmeAktuellenAbschnitt();
-      aktualisiereAnzeige();
-      aktualisierePhaseAnzeige();
-      stoppeRingAnimationSofort(); // Ring springt sofort auf den neuen Stand, statt hinzugleiten
-      startButton.disabled = false;
-    }
-
-    // Setzt den Timer auf den Anfang der Routine zurück (erste Übung, Sekunde 0)
+    // Setzt das laufende Training auf seinen Anfang zurück (erster Abschnitt, Sekunde 0).
+    // Phase 9: Der Ablaufplan selbst bleibt dabei unangetastet - er steht seit dem Start
+    // fest und muss nicht neu berechnet werden.
     function setzeZurueck() {
       clearInterval(intervallId);
       intervallId = null;
 
-      uebernehmeEinstellungen();
+      if (ablaufplan.length === 0) {
+        return;
+      }
+
+      aktuellerAbschnittIndex = 0;
+      uebernehmeAktuellenAbschnitt();
+
+      aktualisiereAnzeige();
+      aktualisierePhaseAnzeige();
+      stoppeRingAnimationSofort(); // Ring springt sofort auf den Anfang, statt hinzugleiten
 
       fertigMeldung.textContent = "";
+      startButton.disabled = false;
       pauseButton.disabled = true;
-      eingabenAktivieren(true);
     }
 
     // Schaltet den Lautlos-Modus um und aktualisiert Symbol/Optik des Buttons
@@ -1623,32 +2048,44 @@
     // Phase 7b: Übung hinzufügen
     uebungHinzufuegenButton.addEventListener("click", fuegeUebungHinzu);
 
-    // Wenn der Nutzer eine der beiden globalen Einstellungen ändert (bevor der Timer
-    // läuft), Anzeige direkt aktualisieren. routineGeaendert(false) baut die Übungsliste
-    // dabei nicht neu auf, damit der Cursor im Eingabefeld bleibt.
+    // Änderungen an den beiden globalen Werten wirken sofort auf die Gesamtdauer.
+    // routineGeaendert(false) baut die Übungsliste dabei nicht neu auf, damit der
+    // Cursor im Eingabefeld bleibt.
     pauseDauerEingabe.addEventListener("input", function () {
-      if (intervallId === null) {
-        routineGeaendert(false);
-      }
+      routineGeaendert(false);
     });
     seitenwechselDauerEingabe.addEventListener("input", function () {
-      if (intervallId === null) {
-        routineGeaendert(false);
-      }
+      routineGeaendert(false);
     });
 
-    // Phase 4: Preset-Speichern-Button mit der Speicherfunktion verknüpfen
-    presetSpeichernButton.addEventListener("click", speicherePreset);
+    // Phase 9: Startbildschirm und Editor
+    zurueckButton.addEventListener("click", geheZurueck);
+    bearbeitenButton.addEventListener("click", schalteBearbeitenModusUm);
+    neuButton.addEventListener("click", function () {
+      oeffneEditor(null);
+    });
+    speichernButton.addEventListener("click", speichereRoutineAusEditor);
+    loeschenButton.addEventListener("click", loescheRoutineAusEditor);
+    routineNameEingabe.addEventListener("input", function () {
+      editorMeldung.textContent = "";
+    });
 
-    // Phase 4: gespeicherte Presets aus dem localStorage laden und anzeigen
-    ladePresetsAusSpeicher();
+    // Phase 9: freier Modus
+    freiButton.addEventListener("click", oeffneFreienModus);
+    freiStartButton.addEventListener("click", starteFreienModus);
+    [freiUebungEingabe, freiPauseEingabe, freiRundenEingabe].forEach(function (feld) {
+      feld.addEventListener("input", function () {
+        aktualisiereFreieGesamtdauer();
+        // Auch direkt speichern, nicht erst beim Start - sonst wären geänderte Werte
+        // verloren, wenn man die Ansicht ohne Start wieder verlässt
+        speichereFreieWerte();
+      });
+    });
 
-    // Phase 7b: zuletzt eingestellte Routine wiederherstellen und anzeigen
-    ladeAktuelleRoutine();
-    zeigeUebungenAn();
-
-    // Beim Laden der Seite die Anzeige einmal initialisieren
-    setzeZurueck();
+    // Phase 9: gespeicherte Daten laden und den Startbildschirm anzeigen
+    ladeRoutinenAusSpeicher();
+    ladeFreieWerte();
+    zeigeStartbildschirm();
 
     // PWA: Service Worker registrieren, damit die App offline funktioniert und auf
     // Android ueber Chrome installierbar wird. Der Check "in navigator" sorgt dafuer,

@@ -97,6 +97,35 @@ Die Trainingsansicht bleibt unverändert (vom Nutzer als gut bewertet); überarb
 
 **Noch offen:** Die gespeicherten Routinen sind angeschnitten sichtbar, aber nicht vollständig – dafür müssten die Steuerbuttons deutlich kleiner werden, was der wichtigsten Aktion (Start) schaden würde.
 
+*Hinweis:* Mit Phase 9 ist diese Einrichtungsansicht in dieser Form entfallen – die Übungsliste steckt jetzt im Editor, der Startbildschirm zeigt Kacheln.
+
+### Phase 9 – Startbildschirm mit Routine-Kacheln ✅ erledigt
+
+Die App besteht nicht mehr aus einer langen Seite, sondern aus **vier Ansichten**, von denen immer genau eine sichtbar ist. Gesteuert wird das über eine Klasse am `<body>` (`ansicht-start`, `ansicht-editor`, `ansicht-training`, `ansicht-frei`), die `zeigeAnsicht()` setzt – kein Framework, kein echter Seitenwechsel.
+
+**Startbildschirm:** Kacheln der gespeicherten Routinen mit Name, Anzahl Übungen und Gesamtdauer. Ein Tipp startet die Routine sofort. Darunter „Bearbeiten" und „Neue Routine", darunter abgesetzt „Freier Modus".
+
+**Editor:** Namensfeld (Pflicht – eine Kachel ohne Beschriftung wäre nicht wiederzuerkennen), die Übungsliste aus Phase 7b, Pause- und Seitenwechseldauer, „Speichern" und „Routine löschen". Bearbeitet wird immer auf Kopien, ein Abbruch lässt die gespeicherte Routine unverändert.
+
+**Training:** unverändert gegenüber Phase 8.
+
+**Freier Modus:** einfacher Intervalltimer mit Übungsdauer, Pausendauer und Rundenzahl – ohne Namen, Liste oder Routinen. Entspricht dem Verhalten vor Phase 7b. Dass sich das in wenigen Zeilen ausdrücken lässt (`baueFreienPlan`), ist der Nutzen des Ablaufplans aus Phase 7a: Beide Betriebsarten münden über `starteAblauf()` in denselben Timer. Die Fortschrittsanzeige zählt hier „Runde X von Y" statt „Übung X von Y".
+
+**Festgelegte Entscheidungen:**
+- „Bearbeiten" schaltet einen Modus um: Kacheln öffnen dann den Editor statt zu starten, erkennbar an gestrichelten Rahmen, geändertem Hinweistext und dem Button, der zu „Fertig" wird.
+- Der Zurück-Pfeil oben links führt aus jeder Ansicht zum Startbildschirm und bricht ein laufendes Training ab (nötig, weil eine Kachel sofort startet und ein Fehltipp sonst nicht zu korrigieren wäre). Im Editor fragt er nur nach, wenn es ungespeicherte Änderungen gibt.
+- Nach dem Trainingsende bleibt die Ansicht stehen, damit die Abschlussmeldung lesbar ist.
+- Die unbenannte Arbeitsliste aus Phase 7b wird nicht übernommen; ihr Speicherplatz wird beim ersten Start geräumt. Benannte Routinen aus Phase 7b bleiben erhalten – sie sind im neuen Modell die Kacheln.
+
+**Entfallen:** der separate Preset-Bereich (Speichern passiert im Editor), das automatische Speichern der unbenannten Arbeitsliste, das Sperren der Eingabefelder während des Trainings (Editor und Training sind jetzt getrennte Ansichten) und die Verkleinerung des Rings in der Einrichtungsansicht.
+
+**Behobener Layoutfehler beim Umbau:** `#inhalt` hatte keine eigene Breite – bisher spannten die Kinder ihn mit eigenen `clamp()`-Breiten auf. Da die Ansichten `width: 100%` fordern, war das ein Zirkelschluss, und die Kacheln blieben auf ihrer Mindestbreite von 135 px stehen, wodurch ihre Beschriftungen umbrachen. `#inhalt` hat jetzt eine explizite Breite, der Ring ist auf `min(86vw, 460px)` begrenzt, damit er sie nicht überragt.
+
+**Geprüft:** 60 automatische Prüfungen (headless) über Navigation, leeren Startbildschirm, Anlegen ohne Namen, Anlegen und Ändern, Speicherinhalt, Start per Kachel, Ablauf bis zum Ende, Zurück aus laufendem und beendetem Training, Bearbeiten-Modus, Verwerfen mit und ohne Änderungen, Löschen mit Rückfrage, freier Modus inklusive gemerkter Werte, beschädigte und unvollständige Speicherdaten sowie das Räumen alter Speicherstände. Layout per Screenshot bei 412 px und 360 px.
+
+### Phase 10 – noch offen
+Vorbereitungszeit vor dem Trainingsstart (relevant, weil eine Kachel sofort startet), Pausendauer pro Übung, Import/Export von Routinen, Umsortieren der Kacheln.
+
 ## Workflow nach jeder Phase
 1. Im Browser testen
 2. `git add .`
