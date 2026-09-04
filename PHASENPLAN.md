@@ -33,6 +33,47 @@ Fortschrittsring um die Countdown-Anzeige (leert sich synchron zur verbleibenden
 ### Phase 6 – PWA-Fähigkeit ✅ erledigt
 Manifest + Service Worker + Icons ergänzt, App ist auf Android über Chrome/Edge installierbar (getestet, funktioniert). Gehostet über GitHub Pages: https://pascalg42.github.io/first-steps/
 
+### Phase 7 – Individuelle Übungsliste statt fester Rundenformel ⬜ geplant
+
+**Problem:** Der Ablauf wird bisher aus einer Formel berechnet (Übungsdauer × Pausendauer × Rundenzahl) und ist deshalb für jede Runde identisch. Dehnübungen, bei denen erst die eine und dann die andere Seite gedehnt wird (Seitenwechsel ohne Pause dazwischen), lassen sich damit nicht abbilden – ein zusätzlicher Schalter würde immer für alle Runden gleichzeitig gelten.
+
+**Lösung:** Wechsel des Datenmodells von der Formel zu einer Übungsliste. Jede Übung hat einen optionalen Namen, eine eigene Dauer und ein Häkchen "beide Seiten". Vor dem Start erzeugt die App daraus einen Ablaufplan (Array von Abschnitten), den der Timer nur noch der Reihe nach abarbeitet.
+
+**Beispielablauf** (Übung 1 zweiseitig, Übung 2 einseitig):
+
+```
+Hamstring links   30s
+SEITE WECHSELN     5s
+Hamstring rechts  30s
+PAUSE             15s
+Nacken            30s
+(Ende – keine Pause nach der letzten Übung)
+```
+
+**Festgelegte Entscheidungen:**
+- Seitenwechsel ist ein eigener kurzer Abschnitt mit einstellbarer Dauer (Standard 5 Sek., 0 = sofortiger Wechsel), zentral für alle Übungen.
+- Die Rundenzahl entfällt ersatzlos. Wiederholungen werden mehrfach in die Liste eingetragen; dafür bekommt jede Zeile einen "Duplizieren"-Button.
+- Die Pausendauer bleibt zentral für alle Übungen. Eine Pause pro Übung lässt sich später ohne Umbau nachrüsten, weil der Ablaufplan ohnehin pro Abschnitt rechnet.
+- Keine Migration alter Presets (vom Nutzer ausdrücklich nicht gewünscht). Presets bekommen einen neuen localStorage-Schlüssel; der alte Schlüssel wird beim ersten Start der neuen Version entfernt, damit keine unbrauchbaren Daten im Browser zurückbleiben.
+
+**Teilschritte:**
+
+*7a – Umbau im Inneren, Verhalten unverändert*
+Timer auf den Ablaufplan umstellen (`wechsleZurNaechstenPhase`, `stehtNormalerPhasenwechselBevor`, alle Prüfungen auf `aktuellePhase === "uebung"` bei Sounds, Ringfarbe und Vorwarnung). Die drei Eingabefelder bleiben zunächst unverändert und erzeugen intern denselben Ablauf wie bisher. Testkriterium: kein sichtbarer oder hörbarer Unterschied zur bisherigen Version.
+
+*7b – Übungsliste als Bedienoberfläche*
+Die drei Eingabefelder werden durch eine Liste ersetzt: Übungen anlegen, bearbeiten, duplizieren, löschen und in der Reihenfolge verschieben. Pro Zeile Name, Dauer, Häkchen "beide Seiten". Darunter zentral Pausendauer und Seitenwechseldauer. Presets speichern ab jetzt die komplette Liste. Während des Trainings wird die Liste ausgeblendet, damit auf dem Handy nur Ring und Buttons sichtbar bleiben.
+
+*7c – Anzeige und Signale für den Seitenwechsel*
+Eigene Anzeige ("SEITE WECHSELN") und ein vom Pausensignal klar unterscheidbares Ton-/Vibrationssignal, damit ohne Hinsehen erkennbar ist, ob umgelagert oder ausgeruht wird. Phasenanzeige zeigt Übungsname, Seite und Fortschritt (z. B. "Hamstring – rechts · Übung 2 von 6").
+
+**Risiken:**
+- Fehler in der Timer-Logik beim Umbau (z. B. letzte Pause wird nicht weggelassen, Signal am falschen Punkt): Wahrscheinlichkeit mittel, Auswirkung mittel. Gegenmaßnahme: 7a strikt verhaltensneutral halten und vor 7b testen, jeder Teilschritt ein eigener Commit.
+- Bedienoberfläche wird auf dem Handy zu voll: Wahrscheinlichkeit mittel, Auswirkung mittel. Gegenmaßnahme: Liste während des Trainings ausblenden, erweiterte Einstellungen einklappbar.
+- Presetverlust: entfällt als Risiko, da die alten Presets bewusst verworfen werden.
+
+**Noch offen (nicht Teil von Phase 7):** Vorbereitungszeit vor dem Trainingsstart, Pausendauer pro Übung, Import/Export von Routinen.
+
 ## Workflow nach jeder Phase
 1. Im Browser testen
 2. `git add .`

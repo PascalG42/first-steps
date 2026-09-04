@@ -446,13 +446,27 @@
     // Wir brauchen sie, um den Timer später wieder stoppen zu können (clearInterval).
     let intervallId = null;
 
-    // Phase 2: welche Phase ist gerade aktiv? "uebung" oder "pause"
-    let aktuellePhase = "uebung";
+    // Phase 7a: Der Ablaufplan - eine fertig ausgerechnete Liste aller Abschnitte des
+    // Trainings, die der Timer nur noch der Reihe nach abarbeitet. Vorher wurde bei jedem
+    // Phasenwechsel neu berechnet, was als Nächstes kommt (Übung? Pause? Ende?). Jetzt
+    // steht das alles schon vorher fest, was spätere Sonderfälle (z.B. Seitenwechsel ohne
+    // Pause) auf eine reine Frage des Planaufbaus reduziert - die Timer-Logik selbst muss
+    // dafür nicht mehr angefasst werden.
+    //
+    // Jeder Eintrag sieht so aus:
+    //   { typ: "uebung" | "pause", dauer: 30, runde: 1 }
+    // typ   = wie der Abschnitt angezeigt und beklungen wird
+    // dauer = Länge in Sekunden
+    // runde = zu welcher Runde der Abschnitt gehört (nur für die Anzeige "Runde X von Y")
+    let ablaufplan = [];
 
-    // Phase 2: in welcher Runde befinden wir uns gerade (beginnt bei 1)
-    let aktuelleRunde = 1;
+    // Phase 7a: an welcher Stelle im ablaufplan wir uns gerade befinden (0 = erster Eintrag).
+    // Ersetzt die früheren Variablen aktuellePhase und aktuelleRunde - beides steht jetzt
+    // im Abschnitt selbst und wird über aktuellerAbschnitt() gelesen.
+    let aktuellerAbschnittIndex = 0;
 
-    // Phase 2: wie viele Runden sollen insgesamt trainiert werden (wird aus der Eingabe gelesen)
+    // Wie viele Runden das Training insgesamt hat. Wird beim Erzeugen des Ablaufplans
+    // gesetzt und nur noch für den Text "Runde X von Y" gebraucht.
     let gesamtRunden = 5;
 
     // Gesamtdauer (in Sekunden) der aktuell laufenden Phase - wird gebraucht, um den
@@ -510,6 +524,46 @@
         wert = minimum;
       }
       return wert;
+    }
+
+    // ---- Phase 7a: Ablaufplan aufbauen und lesen ----
+
+    // Baut den kompletten Ablaufplan aus den aktuellen Eingabefeldern auf.
+    // Der erzeugte Plan bildet exakt den bisherigen Ablauf ab: Übung, Pause, Übung,
+    // Pause, ... und nach der letzten Übung KEINE Pause mehr, weil das Training dort
+    // endet. Bei 3 Runden entsteht also:
+    //   [Übung(R1), Pause(R1), Übung(R2), Pause(R2), Übung(R3)]
+    function erzeugeAblaufplan() {
+      const uebungDauer = holeZahlAusEingabe(uebungDauerEingabe, 1);
+      const pauseDauer = holeZahlAusEingabe(pauseDauerEingabe, 1);
+      const runden = holeZahlAusEingabe(rundenEingabe, 1);
+
+      gesamtRunden = runden; // für die Anzeige "Runde X von Y"
+
+      const plan = [];
+      for (let runde = 1; runde <= runden; runde++) {
+        plan.push({ typ: "uebung", dauer: uebungDauer, runde: runde });
+
+        // Nach der letzten Übung folgt keine Pause mehr - das Training ist dort zu Ende
+        if (runde < runden) {
+          plan.push({ typ: "pause", dauer: pauseDauer, runde: runde });
+        }
+      }
+      return plan;
+    }
+
+    // Gibt den Abschnitt zurück, der gerade läuft. Ersetzt die früheren Variablen
+    // aktuellePhase (jetzt .typ) und aktuelleRunde (jetzt .runde).
+    function aktuellerAbschnitt() {
+      return ablaufplan[aktuellerAbschnittIndex];
+    }
+
+    // Übernimmt Dauer des aktuellen Abschnitts in den Countdown. Wird beim Zurücksetzen
+    // und bei jedem Abschnittswechsel aufgerufen.
+    function uebernehmeAktuellenAbschnitt() {
+      const abschnitt = aktuellerAbschnitt();
+      verbleibendeSekunden = abschnitt.dauer;
+      aktuellePhaseDauer = abschnitt.dauer; // für den Fortschrittsring
     }
 
     // Wandelt eine Anzahl Sekunden in das Format "MM:SS" um, z.B. 75 -> "01:15"
@@ -571,9 +625,13 @@
       ringFortschritt.style.transition = "";
     }
 
-    // Phase 2: Aktualisiert Phasentext, Rundentext und die Hintergrundfarbe passend zur aktuellen Phase
+    // Phase 2: Aktualisiert Phasentext, Rundentext und die Hintergrundfarbe passend zur aktuellen Phase.
+    // Phase 7a: liest Phase und Runde jetzt aus dem aktuellen Abschnitt des Ablaufplans
+    // statt aus eigenen Variablen.
     function aktualisierePhaseAnzeige() {
-      if (aktuellePhase === "uebung") {
+      const abschnitt = aktuellerAbschnitt();
+
+      if (abschnitt.typ === "uebung") {
         phaseAnzeige.textContent = "ÜBUNG";
         document.body.classList.remove("phase-pause");
         document.body.classList.add("phase-uebung");
@@ -582,7 +640,7 @@
         document.body.classList.remove("phase-uebung");
         document.body.classList.add("phase-pause");
       }
-      rundenAnzeige.textContent = "Runde " + aktuelleRunde + " von " + gesamtRunden;
+      rundenAnzeige.textContent = "Runde " + abschnitt.runde + " von " + gesamtRunden;
     }
 
     // Aktiviert oder deaktiviert die drei Eingabefelder (z.B. gesperrt, solange der Timer läuft)
@@ -791,9 +849,11 @@
 
     // Prüft, ob nach Ablauf der aktuellen Phase ein normaler Phasenwechsel folgt
     // (im Gegensatz zum endgültigen Trainingsende, das kein Vorwarn-Countdown bekommt,
-    // weil sein Signal separat und unverändert bleiben soll)
+    // weil sein Signal separat und unverändert bleiben soll).
+    // Phase 7a: Das ist jetzt eine reine Positionsfrage - gibt es im Ablaufplan noch
+    // einen Eintrag hinter dem aktuellen?
     function stehtNormalerPhasenwechselBevor() {
-      return !(aktuellePhase === "uebung" && aktuelleRunde >= gesamtRunden);
+      return aktuellerAbschnittIndex < ablaufplan.length - 1;
     }
 
     // Wird jede Sekunde aufgerufen, solange der Timer läuft
@@ -813,34 +873,26 @@
       }
     }
 
-    // Phase 2: Kernstück der Mehrphasen-Logik.
-    // Wird aufgerufen, sobald eine Phase (Übung oder Pause) abgelaufen ist,
-    // und entscheidet, wie es weitergeht.
+    // Phase 2 / Phase 7a: Kernstück der Mehrphasen-Logik.
+    // Wird aufgerufen, sobald ein Abschnitt (Übung oder Pause) abgelaufen ist.
+    // Vorher stand hier die ganze Entscheidungslogik ("war das die letzte Runde?",
+    // "kommt jetzt Pause oder Übung?"). Diese Fragen sind beim Aufbau des Ablaufplans
+    // bereits beantwortet - hier wird nur noch einen Schritt weitergerückt.
     function wechsleZurNaechstenPhase() {
-      const beendetePhase = aktuellePhase; // merken, welche Phase hier gerade endet
+      const beendeterAbschnitt = aktuellerAbschnitt(); // merken, welcher Abschnitt hier endet
 
-      if (aktuellePhase === "uebung") {
-        // Die Übung ist vorbei. War das schon die letzte Runde? Dann ist keine
-        // weitere Pause mehr nötig -> Training direkt beenden.
-        if (aktuelleRunde >= gesamtRunden) {
-          beendeTraining();
-          return;
-        }
-        // Sonst folgt die Pause dieser Runde
-        aktuellePhase = "pause";
-        verbleibendeSekunden = holeZahlAusEingabe(pauseDauerEingabe, 1);
-        aktuellePhaseDauer = verbleibendeSekunden; // für den Fortschrittsring
-      } else {
-        // Die Pause ist vorbei -> nächste Runde beginnt mit einer neuen Übungsphase
-        aktuelleRunde++;
-        aktuellePhase = "uebung";
-        verbleibendeSekunden = holeZahlAusEingabe(uebungDauerEingabe, 1);
-        aktuellePhaseDauer = verbleibendeSekunden; // für den Fortschrittsring
+      // Kein weiterer Eintrag im Plan? Dann ist das Training vorbei.
+      if (!stehtNormalerPhasenwechselBevor()) {
+        beendeTraining();
+        return;
       }
+
+      aktuellerAbschnittIndex++;
+      uebernehmeAktuellenAbschnitt();
 
       aktualisiereAnzeige();
       aktualisierePhaseAnzeige();
-      spielePhasenwechselSignal(beendetePhase); // Sound + Vibration, abhängig von der beendeten Phase
+      spielePhasenwechselSignal(beendeterAbschnitt.typ); // Sound + Vibration, abhängig vom beendeten Abschnitt
     }
 
     // Phase 2: Wird aufgerufen, wenn alle Runden abgeschlossen sind
@@ -887,12 +939,12 @@
       clearInterval(intervallId);
       intervallId = null;
 
-      // Einstellungen neu aus den Eingabefeldern lesen (mindestens 1)
-      gesamtRunden = holeZahlAusEingabe(rundenEingabe, 1);
-      aktuellePhase = "uebung";
-      aktuelleRunde = 1;
-      verbleibendeSekunden = holeZahlAusEingabe(uebungDauerEingabe, 1);
-      aktuellePhaseDauer = verbleibendeSekunden; // für den Fortschrittsring
+      // Phase 7a: Ablaufplan aus den aktuellen Eingabefeldern komplett neu aufbauen
+      // und wieder an dessen Anfang springen. Weil der Plan hier bei jeder Änderung
+      // neu entsteht, wirken geänderte Einstellungen sofort.
+      ablaufplan = erzeugeAblaufplan();
+      aktuellerAbschnittIndex = 0;
+      uebernehmeAktuellenAbschnitt();
 
       aktualisiereAnzeige();
       aktualisierePhaseAnzeige();
