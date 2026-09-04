@@ -79,8 +79,23 @@ Der Seitenwechsel meldet sich mit der bislang ungenutzten `pop.wav` (zweimal kur
 
 **Noch offen (nicht Teil von Phase 7):** Vorbereitungszeit vor dem Trainingsstart, Pausendauer pro Übung, Import/Export von Routinen.
 
-### Phase 8 – UI-Feinschliff der Übungsliste ⬜ offen
-Die Funktionalität aus Phase 7 passt, mit der Gestaltung der Übungsliste ist der Nutzer aber noch nicht zufrieden. Konkrete Änderungen werden erst nach einem Test auf dem Handy festgelegt – dort zeigt sich, ob Zeilenhöhe, Trefferflächen der Symbol-Buttons, Scrollverhalten der Liste bei vielen Übungen und das Ausblenden der Einstellungen während des Trainings in der Praxis tragen.
+### Phase 8 – UI-Feinschliff der Einrichtungsansicht ✅ erledigt
+Die Trainingsansicht bleibt unverändert (vom Nutzer als gut bewertet); überarbeitet wurde nur die Ansicht, in der die Routine zusammengestellt wird.
+
+**Behobene Fehler:**
+- Das Namensfeld war auf wenige Pixel zusammengequetscht, das Dauer-Feld dafür zeilenbreit. Ursache: Die allgemeine Regel `input[type="number"] { width: 100% }` ist spezifischer als `.uebung-dauer` und gewann. Die Regeln für die Felder einer Übungszeile nennen den Attributselektor jetzt selbst mit und überstimmen ihn damit.
+- Ein deaktivierter Zeilenbutton (z. B. "nach oben" in der ersten Zeile) war durch die allgemeine `button:disabled`-Regel dunkler und damit auffälliger als die aktiven Buttons daneben. Deaktivierte Zeilenbuttons treten jetzt zurück, statt sich hervorzuheben.
+
+**Gestalterische Anpassungen:**
+- Trefferflächen: alle vier Symbol-Buttons mindestens 40 × 40 px, das Label "beide Seiten" schaltet auf voller Zeilenhöhe mit (Fitts's Law).
+- Einheitliche Schriftgröße und Innenabstände für Name und Dauer, Abstände durchgehend aus der 4/8/16-Skala (Law of Similarity, Aesthetic-Usability).
+- Eingabefelder mindestens 16 px Schriftgröße, damit mobile Browser beim Antippen nicht automatisch hineinzoomen.
+- `accent-color` der Häkchen auf den dunklen Ringblauton, statt mit dem Systemblau gegen den Hintergrund zu konkurrieren.
+- Vor dem Start wird der Ring auf etwa die halbe Größe verkleinert, Titel und Abstände fallen kompakter aus. Dadurch sind Steuerbuttons vollständig und die gespeicherten Routinen angeschnitten sichtbar, statt weit unterhalb des Bildschirms zu liegen. Beim Start wächst alles weich auf die gewohnte Größe.
+
+**Prüfmethode:** Da Edge in der installierten Version `--window-size` ignoriert und immer mit 492 px rendert, wird die App für Layouttests in einen iframe fester Breite geladen – darin beziehen sich die `vw`-Einheiten korrekt auf die simulierte Handybreite. Geprüft bei 412 px und 360 px, jeweils ohne horizontalen Überlauf.
+
+**Noch offen:** Die gespeicherten Routinen sind angeschnitten sichtbar, aber nicht vollständig – dafür müssten die Steuerbuttons deutlich kleiner werden, was der wichtigsten Aktion (Start) schaden würde.
 
 ## Workflow nach jeder Phase
 1. Im Browser testen

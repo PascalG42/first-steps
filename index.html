@@ -52,6 +52,26 @@
     gap: clamp(20px, 3.5vh, 40px);
   }
 
+  /* Beim Einrichten sind mehr Bereiche gleichzeitig sichtbar als während des Trainings
+     (Übungsliste, globale Werte, Ring, Steuerbuttons, gespeicherte Routinen). Engere
+     Abstände und ein kleinerer Titel bringen die Routinen ohne Scrollen ins Bild.
+     Während des Trainings gelten weiterhin die großzügigen Werte oben. */
+  body:not(.training-laeuft) #inhalt {
+    gap: clamp(12px, 2vh, 22px);
+  }
+
+  /* Auch der Rand oben und unten faellt beim Einrichten kleiner aus - reiner Leerraum,
+     der hier am ehesten entbehrlich ist. Während des Trainings bleibt der großzügige
+     Wert erhalten. */
+  body:not(.training-laeuft) {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  body:not(.training-laeuft) h1 {
+    font-size: clamp(20px, 5vw, 28px);
+  }
+
   /* Phase 2: Hintergrundfarbe zeigt, ob gerade "Übung" oder "Pause" aktiv ist.
      Übung nutzt jetzt das vormalige Pause-Blau, Pause einen dazu passenden, ruhigen
      Grünton in ähnlicher Helligkeit - das wirkt weiterhin harmonisch und bleibt klar
@@ -121,10 +141,11 @@
   #uebungen-liste li {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    /* Abstände durchgehend aus der 4/8/16-Skala, damit die Zeilen ruhig wirken */
+    gap: 8px;
     background-color: rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    padding: 8px 10px;
+    padding: 8px;
   }
 
   .uebung-kopf,
@@ -140,69 +161,114 @@
 
   /* Laufende Nummer der Übung - dient beim Training als Orientierung ("Übung 3 von 6") */
   .uebung-nummer {
-    font-size: clamp(14px, 3.6vw, 17px);
+    font-size: 15px;
     opacity: 0.7;
     min-width: 1.4em;
+    flex: none;
     text-align: right;
   }
 
-  .uebung-name {
-    flex: 1;
-    min-width: 0; /* verhindert Overflow auf sehr schmalen Bildschirmen */
+  /* Beide Eingabefelder einer Übungszeile gemeinsam ansprechen.
+     WICHTIG: Der Selektor nennt "input[type=...]" ausdrücklich mit, damit er
+     spezifischer ist als die allgemeine Regel input[type="number"] { width: 100% }
+     weiter oben. Ohne das würde das Dauer-Feld bildschirmbreit werden, den Namen auf
+     wenige Pixel zusammenquetschen und die Zeile über den rechten Rand schieben.
+     Einheitliche Schrift und Innenabstand, damit beide Felder als gleichartige
+     Elemente gelesen werden (Law of Similarity). */
+  #uebungen-liste input[type="text"],
+  #uebungen-liste input[type="number"] {
     box-sizing: border-box;
-    padding: clamp(7px, 2vw, 10px);
-    border-radius: 6px;
     border: none;
-    font-size: clamp(15px, 3.8vw, 18px);
+    border-radius: 6px;
+    padding: 10px;
+    /* 16px ist bewusst der Mindestwert: Mobile Browser zoomen beim Antippen eines
+       Eingabefelds automatisch hinein, wenn dessen Schrift kleiner ist. */
+    font-size: 16px;
   }
 
-  /* Das Dauer-Feld braucht nur Platz für zwei bis drei Ziffern */
-  .uebung-dauer {
-    width: 4.5em;
+  /* Der Name ist das eigentliche Eingabefeld der Zeile und bekommt allen Platz,
+     der nach den festen Elementen übrig bleibt */
+  #uebungen-liste .uebung-name {
+    flex: 1;
+    min-width: 0; /* erlaubt dem Feld zu schrumpfen, statt die Zeile zu sprengen */
+  }
+
+  /* Das Dauer-Feld braucht nur Platz für bis zu drei Ziffern */
+  #uebungen-liste .uebung-dauer {
+    width: 4.2em;
     flex: none;
     text-align: center;
+    padding-left: 4px;
+    padding-right: 4px;
   }
 
   .uebung-einheit {
-    font-size: clamp(14px, 3.6vw, 17px);
+    font-size: 15px;
     opacity: 0.75;
+    flex: none;
   }
 
   /* Häkchen "beide Seiten": Label und Kästchen gehören zusammen, deshalb umschließt
      das <label> beides - dadurch schaltet auch ein Tipp auf den Text das Häkchen um
      und das Trefferfeld wird deutlich größer. */
+  /* Das Häkchen ist eine der beiden Hauptangaben je Übung und soll sich leicht treffen
+     lassen. Das <label> umschließt Kästchen und Text, damit die gesamte Fläche schaltet
+     (Fitts's Law) - und die Höhe entspricht der der Aktionsbuttons daneben. */
   .beide-seiten {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: clamp(14px, 3.6vw, 17px);
+    gap: 8px;
+    min-height: 40px;
+    padding-right: 8px;
+    font-size: 15px;
     cursor: pointer;
+    user-select: none; /* verhindert versehentliches Markieren des Texts beim Tippen */
   }
 
   .beide-seiten input[type="checkbox"] {
-    width: clamp(18px, 4.5vw, 22px);
-    height: clamp(18px, 4.5vw, 22px);
+    width: 22px;
+    height: 22px;
+    flex: none;
     margin: 0;
     cursor: pointer;
+    /* accent-color faerbt das Häkchen im Stil der App ein. Ohne das nimmt der Browser
+       sein Systemblau, das mit dem blauen Hintergrund konkurriert; der dunkle Ton der
+       Übungsphase hebt sich dagegen klar ab und ist dieselbe Farbe wie der Ring. */
+    accent-color: #123c57;
   }
 
   .uebung-aktionen {
     display: flex;
     gap: 4px;
+    flex: none;
   }
 
   /* Die vier kleinen Symbol-Buttons einer Übungszeile (hoch, runter, duplizieren,
      löschen). Bewusst gruppiert und mit Abstand zum übrigen Inhalt, damit reine
-     Icon-Buttons hier vertretbar bleiben. */
+     Icon-Buttons hier vertretbar bleiben. Die feste Mindestgröße von 40px sorgt für
+     eine sicher mit dem Daumen treffbare Fläche (Fitts's Law) - allein aus Symbolgröße
+     plus Innenabstand kämen nur rund 30px zusammen. */
   .uebung-aktionen button {
     margin: 0;
-    font-size: clamp(15px, 4vw, 19px);
-    padding: clamp(6px, 1.8vw, 9px);
+    font-size: 17px;
+    padding: 0;
+    min-width: 40px;
+    min-height: 40px;
     background-color: rgba(255, 255, 255, 0.12);
   }
 
   .uebung-aktionen button:hover:not(:disabled) {
     background-color: rgba(255, 255, 255, 0.24);
+  }
+
+  /* Ein nicht verfügbarer Button (z.B. "nach oben" in der ersten Zeile) muss
+     zurücktreten. Die allgemeine Regel button:disabled setzt einen kräftigen dunklen
+     Ton - der ist vor dem hellen Zeilenhintergrund auffälliger als die aktiven Buttons
+     daneben und lenkt damit genau auf das, was gerade nicht geht. Stattdessen dieselbe
+     Fläche wie aktiv, nur blasser. */
+  .uebung-aktionen button:disabled {
+    background-color: rgba(255, 255, 255, 0.06);
+    opacity: 0.35;
   }
 
   /* Zeile unter der Liste: Übung hinzufügen und die Gesamtdauer der Routine */
@@ -305,6 +371,23 @@
     position: relative;
     width: clamp(340px, 86vw, 500px);
     height: clamp(340px, 86vw, 500px);
+    /* Weicher Übergang beim Wechsel zwischen Einrichten und Training (siehe unten),
+       damit der Größenwechsel nicht als Sprung wirkt */
+    transition: width 0.3s ease, height 0.3s ease;
+  }
+
+  /* Solange kein Training läuft, wird der Ring auf etwa die halbe Größe verkleinert.
+     Er zeigt in diesem Moment nur die Startzeit an und braucht den Platz nicht - ohne
+     die Verkleinerung liegen Steuerbuttons und gespeicherte Routinen unterhalb des
+     sichtbaren Bereichs und sind nur durch Scrollen erreichbar. Beim Start wächst er
+     auf die volle Größe, die Trainingsansicht bleibt also unverändert. */
+  body:not(.training-laeuft) #countdown-wrapper {
+    width: clamp(170px, 43vw, 250px);
+    height: clamp(170px, 43vw, 250px);
+  }
+
+  body:not(.training-laeuft) #anzeige {
+    font-size: clamp(40px, 11vw, 65px);
   }
 
   /* Der Ring liegt als SVG hinter der Zahl, gedreht auf "12 Uhr"-Start */
@@ -363,6 +446,7 @@
     font-size: clamp(80px, 22vw, 130px);
     font-weight: bold;
     font-variant-numeric: tabular-nums; /* Ziffern bleiben gleich breit, kein "Wackeln" */
+    transition: font-size 0.3s ease; /* passend zum Größenwechsel des Rings */
   }
 
   /* Buttons: neutraler, dunkler Blaugrau-Ton statt des vorherigen Lila-Tons - passt
