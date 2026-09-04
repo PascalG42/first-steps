@@ -6,7 +6,7 @@
 // Name des Caches. Die Versionsnummer am Ende (v1) erhoehen, wenn sich die Liste der
 // zu cachenden Dateien aendert - so wird beim naechsten Laden ein neuer Cache angelegt
 // und der alte (siehe "activate" weiter unten) aufgeraeumt.
-const CACHE_NAME = "intervalltimer-cache-v1";
+const CACHE_NAME = "intervalltimer-cache-v2";
 
 // Alle Dateien, die fuer die Offline-Nutzung im Cache liegen sollen
 const CACHE_DATEIEN = [
@@ -16,6 +16,7 @@ const CACHE_DATEIEN = [
   "./sound_effects/beep.wav",
   "./sound_effects/end.wav",
   "./sound_effects/start.wav",
+  "./sound_effects/pop.wav",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];

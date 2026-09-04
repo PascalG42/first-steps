@@ -668,8 +668,16 @@
     // "sound_effects" neben dieser index.html). Jede Datei wird nur einmal geladen und
     // bei Bedarf einfach erneut abgespielt (siehe spieleAudioDatei).
     const beepSound = new Audio("sound_effects/beep.wav"); // Vorwarnung (2x identisch)
-    const endSound = new Audio("sound_effects/end.wav"); // Übungsphase endet
-    const startSound = new Audio("sound_effects/start.wav"); // Pausenphase endet
+    const endSound = new Audio("sound_effects/end.wav"); // Pause beginnt
+    const startSound = new Audio("sound_effects/start.wav"); // Übung beginnt
+
+    // Phase 7c: Signal für den Seitenwechsel. "pop.wav" ist kurz und perkussiv und hebt
+    // sich damit deutlich von den beiden längeren, abfallenden Tönen oben ab - man hört
+    // also ohne hinzusehen, ob umgelagert oder ausgeruht werden soll. Zwei Audio-Objekte
+    // für dieselbe Datei, damit der Ton zweimal kurz hintereinander erklingen kann, ohne
+    // dass der zweite Anschlag den ersten abschneidet.
+    const seitenwechselSound1 = new Audio("sound_effects/pop.wav");
+    const seitenwechselSound2 = new Audio("sound_effects/pop.wav");
 
     // Lautlos-Modus: wenn true, spielen spieleAudioDatei() und spieleTon() keinen Ton ab.
     // Vibration ist davon bewusst nicht betroffen (bleibt als haptisches Feedback erhalten).
@@ -1254,7 +1262,7 @@
         // Jede Sound-Datei einmal kurz an- und wieder ausschalten. Das "entsperrt" die
         // Wiedergabe für spätere, nicht durch einen Klick ausgelöste play()-Aufrufe
         // (z.B. aus dem laufenden Countdown heraus).
-        [beepSound, endSound, startSound].forEach(function (audioElement) {
+        [beepSound, endSound, startSound, seitenwechselSound1, seitenwechselSound2].forEach(function (audioElement) {
           audioElement
             .play()
             .then(function () {
@@ -1312,14 +1320,34 @@
       });
     }
 
-    // Signal bei einem normalen Phasenwechsel (Übung -> Pause oder Pause -> Übung).
-    // Der Sound unterscheidet sich danach, welche Phase gerade zu Ende geht, damit man
-    // auch ohne hinzusehen hört, ob eine Übungs- oder eine Pausenphase endet.
-    function spielePhasenwechselSignal(beendetePhase) {
-      if (beendetePhase === "uebung") {
-        spieleAudioDatei(endSound); // Übung endet -> "end.wav"
+    // Phase 7c: Signal für den Seitenwechsel - zwei kurze Anschläge kurz hintereinander
+    // und ein doppelter Vibrationsstoß. Beides unterscheidet sich bewusst vom einzelnen
+    // Ton und dem einzelnen Vibrationsstoß der übrigen Wechsel.
+    function spieleSeitenwechselSignal() {
+      spieleAudioDatei(seitenwechselSound1);
+      setTimeout(function () {
+        spieleAudioDatei(seitenwechselSound2);
+      }, 200);
+      vibriere([120, 80, 120]);
+    }
+
+    // Signal bei einem Phasenwechsel. Der Klang richtet sich danach, was als Nächstes
+    // kommt - denn das ist die Information, die während der Übung gebraucht wird:
+    // umlagern, ausruhen oder weitermachen?
+    function spielePhasenwechselSignal(beendeterTyp, neuerTyp) {
+      // Ein Seitenwechsel liegt auch dann vor, wenn zwei Übungsabschnitte direkt
+      // aufeinander folgen - das passiert bei einer Seitenwechseldauer von 0 Sekunden.
+      const seitenwechselStehtAn = neuerTyp === "seitenwechsel" || (beendeterTyp === "uebung" && neuerTyp === "uebung");
+
+      if (seitenwechselStehtAn) {
+        spieleSeitenwechselSignal();
+        return;
+      }
+
+      if (neuerTyp === "pause") {
+        spieleAudioDatei(endSound); // Pause beginnt -> "end.wav"
       } else {
-        spieleAudioDatei(startSound); // Pause endet -> "start.wav"
+        spieleAudioDatei(startSound); // Übung beginnt -> "start.wav"
       }
       vibriere(200); // einzelne kurze Vibration (200ms), wie bisher bei jedem Phasenwechsel
     }
@@ -1388,7 +1416,8 @@
 
       aktualisiereAnzeige();
       aktualisierePhaseAnzeige();
-      spielePhasenwechselSignal(beendeterAbschnitt.typ); // Sound + Vibration, abhängig vom beendeten Abschnitt
+      // Sound + Vibration, abhängig davon, was endet und was als Nächstes kommt
+      spielePhasenwechselSignal(beendeterAbschnitt.typ, aktuellerAbschnitt().typ);
     }
 
     // Phase 2: Wird aufgerufen, wenn alle Runden abgeschlossen sind

@@ -33,7 +33,7 @@ Fortschrittsring um die Countdown-Anzeige (leert sich synchron zur verbleibenden
 ### Phase 6 – PWA-Fähigkeit ✅ erledigt
 Manifest + Service Worker + Icons ergänzt, App ist auf Android über Chrome/Edge installierbar (getestet, funktioniert). Gehostet über GitHub Pages: https://pascalg42.github.io/first-steps/
 
-### Phase 7 – Individuelle Übungsliste statt fester Rundenformel ⬜ geplant
+### Phase 7 – Individuelle Übungsliste statt fester Rundenformel ✅ erledigt
 
 **Problem:** Der Ablauf wird bisher aus einer Formel berechnet (Übungsdauer × Pausendauer × Rundenzahl) und ist deshalb für jede Runde identisch. Dehnübungen, bei denen erst die eine und dann die andere Seite gedehnt wird (Seitenwechsel ohne Pause dazwischen), lassen sich damit nicht abbilden – ein zusätzlicher Schalter würde immer für alle Runden gleichzeitig gelten.
 
@@ -69,8 +69,8 @@ Gegenüber der ursprünglichen Planung mit aufgenommen, weil der Schritt sonst n
 - Die eingestellte Routine wird automatisch gespeichert und beim nächsten Öffnen wiederhergestellt. Ohne das müsste die Liste nach jedem Schließen der App neu eingetippt oder aus einem Preset geladen werden.
 - Anzeige der Gesamtdauer unter der Liste, da diese bei frei zusammengestellten Übungen sonst nicht mehr absehbar ist.
 
-*7c – Akustische Unterscheidung des Seitenwechsels* ⬜ offen
-Ein vom Pausensignal klar unterscheidbares Ton-/Vibrationssignal beim Seitenwechsel, damit ohne Hinsehen erkennbar ist, ob umgelagert oder ausgeruht werden soll. Sichtbar ist der Seitenwechsel bereits seit 7b.
+*7c – Akustische Unterscheidung des Seitenwechsels* ✅ erledigt
+Der Seitenwechsel meldet sich mit der bislang ungenutzten `pop.wav` (zweimal kurz hintereinander) und einem doppelten Vibrationsstoß `[120, 80, 120]`. Die Datei ist kurz und perkussiv und hebt sich damit von den längeren, abfallenden Tönen `end.wav` und `start.wav` ab. Der Klang richtet sich ab jetzt nach dem *beginnenden* Abschnitt, nicht mehr nach dem endenden – das ist die Information, die während der Übung gebraucht wird: umlagern, ausruhen oder weitermachen. Bei einer Seitenwechseldauer von 0 Sekunden (zwei Übungsabschnitte direkt hintereinander) erklingt ebenfalls das Seitenwechsel-Signal. `pop.wav` wurde in den Service-Worker-Cache aufgenommen (Cache-Version auf v2 erhöht), damit sie auch offline verfügbar ist.
 
 **Risiken:**
 - Fehler in der Timer-Logik beim Umbau (z. B. letzte Pause wird nicht weggelassen, Signal am falschen Punkt): Wahrscheinlichkeit mittel, Auswirkung mittel. Gegenmaßnahme: 7a strikt verhaltensneutral halten und vor 7b testen, jeder Teilschritt ein eigener Commit.
@@ -78,6 +78,9 @@ Ein vom Pausensignal klar unterscheidbares Ton-/Vibrationssignal beim Seitenwech
 - Presetverlust: entfällt als Risiko, da die alten Presets bewusst verworfen werden.
 
 **Noch offen (nicht Teil von Phase 7):** Vorbereitungszeit vor dem Trainingsstart, Pausendauer pro Übung, Import/Export von Routinen.
+
+### Phase 8 – UI-Feinschliff der Übungsliste ⬜ offen
+Die Funktionalität aus Phase 7 passt, mit der Gestaltung der Übungsliste ist der Nutzer aber noch nicht zufrieden. Konkrete Änderungen werden erst nach einem Test auf dem Handy festgelegt – dort zeigt sich, ob Zeilenhöhe, Trefferflächen der Symbol-Buttons, Scrollverhalten der Liste bei vielen Übungen und das Ausblenden der Einstellungen während des Trainings in der Praxis tragen.
 
 ## Workflow nach jeder Phase
 1. Im Browser testen
