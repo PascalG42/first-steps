@@ -140,7 +140,21 @@ Die Sperre gilt vom Trainingsstart bis zum Trainingsende oder zum Verlassen der 
 
 **Geprüft:** 34 automatische Prüfungen (headless) über Vorlauf im Ablauf, Tonfolge im Vorlauf, Zurücksetzen, freien Modus mit Vorlauf, alle Aufrufstellen des Wachhaltens (Start, Pause, Fortsetzen, Verlassen, Trainingsende) sowie die Umsetzung gegen eine nachgebildete Schnittstelle: Anforderung als `"screen"`, kein doppeltes Anfordern, Neuanforderung nach browserseitiger Aufhebung, manuelle Freigabe, fehlende Schnittstelle und abgelehnte Anfrage. Die Tests aus Phase 9 und der Signaltest aus 7c wurden auf den Vorlauf nachgezogen.
 
-### Phase 11 – noch offen
+### Phase 11 – Vorschau auf die nächste Übung ✅ erledigt
+
+Während einer Pause steht unter „Übung X von Y" eine zusätzliche Zeile **„Als Nächstes: <Übungsname>"**, damit man sich schon auf die kommende Übung einstellen kann. Bei zweiseitigen Übungen steht die Startseite dabei („Ausfallschritt – links"), unbenannte Übungen erscheinen wie überall als „Übung 3".
+
+**Festgelegte Entscheidungen:**
+- Die Vorschau erscheint auch im Vorlauf („BEREIT MACHEN"), denn auch dort bereitet man sich auf die erste Übung vor.
+- Während einer Übung und beim Seitenwechsel bleibt die Zeile leer – dort ist klar, was läuft.
+- Im freien Modus heißen alle Übungen gleich, dort lautet die Vorschau „Als Nächstes: Runde 3".
+- Die Zeile behält ihre Höhe auch, wenn sie leer ist. Sonst würde der Ring bei jedem Wechsel zwischen Übung und Pause um eine Zeile springen.
+
+Umgesetzt in `vorschauText()`: liest den nächsten Abschnitt direkt aus dem Ablaufplan, eine eigene Berechnung ist nicht nötig.
+
+**Geprüft:** alle Abschnitte einer Routine mit einseitiger, zweiseitiger und unbenannter Übung, freier Modus, echter Timerlauf bis in die Pause, Layout per Screenshot bei 360 px.
+
+### Phase 12 – noch offen
 Pausendauer pro Übung, Import/Export von Routinen, Umsortieren der Kacheln, Vorlaufdauer über die Oberfläche einstellbar.
 
 ## Workflow nach jeder Phase

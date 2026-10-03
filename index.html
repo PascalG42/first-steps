@@ -563,6 +563,18 @@
     opacity: 0.85;
   }
 
+  /* Phase 11: Vorschau auf die nächste Übung während Pause und Vorlauf. min-height
+     reserviert die Zeile auch, wenn sie leer ist - sonst würde der Ring bei jedem
+     Wechsel zwischen Übung und Pause um eine Zeile nach oben und unten springen. */
+  #naechste-anzeige {
+    font-size: clamp(18px, 4.5vw, 26px);
+    font-weight: bold;
+    min-height: clamp(24px, 6vw, 34px);
+    max-width: clamp(300px, 90vw, 460px);
+    text-align: center;
+    overflow-wrap: break-word;
+  }
+
   /* Hält Ring, Fertig-Meldung und Buttons eng zusammen, damit unter dem Ring keine
      große Lücke zu den Buttons entsteht */
   #ring-und-buttons {
@@ -847,6 +859,9 @@
 
     <!-- Zeigt den Rundenfortschritt an -->
     <div id="runden-anzeige">Runde 1 von 5</div>
+
+    <!-- Phase 11: In Pause und Vorlauf steht hier, welche Übung als Nächstes kommt -->
+    <div id="naechste-anzeige"></div>
   </div>
 
   <!-- Ring, Fertig-Meldung und Buttons ebenfalls eng zusammen, damit unter dem Ring
@@ -1021,6 +1036,7 @@
     const seitenwechselDauerEingabe = document.getElementById("seitenwechsel-dauer-eingabe");
     const phaseAnzeige = document.getElementById("phase-anzeige");
     const rundenAnzeige = document.getElementById("runden-anzeige");
+    const naechsteAnzeige = document.getElementById("naechste-anzeige");
     const anzeige = document.getElementById("anzeige");
     const ringFortschritt = document.getElementById("ring-fortschritt");
     const fertigMeldung = document.getElementById("fertig-meldung");
@@ -1235,6 +1251,27 @@
       }
 
       rundenAnzeige.textContent = zaehlerBezeichnung + " " + abschnitt.nummer + " von " + gesamtUebungen;
+      naechsteAnzeige.textContent = vorschauText();
+    }
+
+    // Phase 11: Text für die Vorschau auf die nächste Übung. Nur in Pause und Vorlauf,
+    // damit man sich dort schon auf die kommende Übung einstellen kann - während einer
+    // Übung oder eines Seitenwechsels ist klar, was läuft, die Zeile bleibt leer.
+    function vorschauText() {
+      const abschnitt = aktuellerAbschnitt();
+      const naechster = ablaufplan[aktuellerAbschnittIndex + 1];
+
+      if ((abschnitt.typ !== "pause" && abschnitt.typ !== "vorbereitung") || !naechster) {
+        return "";
+      }
+
+      // Im freien Modus heißen alle Übungen gleich, dort hilft nur die Rundennummer
+      const beschriftung = zaehlerBezeichnung === "Runde"
+        ? "Runde " + naechster.nummer
+        : beschriftungFuer(naechster);
+      const seitenZusatz = naechster.seite ? " – " + naechster.seite : "";
+
+      return "Als Nächstes: " + beschriftung + seitenZusatz;
     }
 
     // Phase 9: Das Sperren der Eingaben während des Trainings ist entfallen. Editor und
