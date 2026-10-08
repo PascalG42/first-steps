@@ -154,8 +154,24 @@ Umgesetzt in `vorschauText()`: liest den nächsten Abschnitt direkt aus dem Abla
 
 **Geprüft:** alle Abschnitte einer Routine mit einseitiger, zweiseitiger und unbenannter Übung, freier Modus, echter Timerlauf bis in die Pause, Layout per Screenshot bei 360 px.
 
-### Phase 12 – noch offen
-Pausendauer pro Übung, Import/Export von Routinen, Umsortieren der Kacheln, Vorlaufdauer über die Oberfläche einstellbar.
+### Phase 12 – Zur vorherigen oder nächsten Übung springen ✅ erledigt
+
+Unter Start, Pause und Zurücksetzen liegt eine zweite Reihe mit **„Vorherige"** und **„Nächste"** – etwa um eine Übung auszulassen, die heute nicht geht, oder eine zu wiederholen. Die beiden Buttons tragen Text, weil sich ihre Symbole sonst leicht mit Start und Zurücksetzen verwechseln lassen.
+
+**Festgelegte Entscheidungen:**
+- Gesprungen wird immer an den **Anfang einer Übung**, nie in eine Pause oder einen Seitenwechsel. Eine zweiseitige Übung zählt als eine Übung und beginnt links.
+- „Nächste" überspringt die Pause dazwischen. In einer Pause startet sie die kommende Übung sofort, im Vorlauf die erste. In der letzten Übung ist der Button gesperrt – das Training endet nicht durch einen Fehltipp.
+- „Vorherige" verhält sich wie die Zurück-Taste eines Musikplayers: in den ersten 3 Sekunden einer Übung zur Übung davor, danach an den Anfang der laufenden Übung. In einer Pause wiederholt sie die gerade beendete Übung. Im Vorlauf ist sie gesperrt.
+- Ein laufender Timer läuft nach dem Sprung weiter, mit dem üblichen Startsignal; ein pausierter bleibt pausiert.
+
+Umgesetzt über `zielNaechste()`, `zielVorherige()` und `springeZu()`. Wie schon die Vorschau aus Phase 11 lesen sie nur den Ablaufplan, der Timer selbst bleibt unverändert.
+
+**Geprüft:** 19 automatische Prüfungen (headless) über alle Sprünge aus Vorlauf, Übung, Pause, Seitenwechsel und zweiseitiger Übung, die 3-Sekunden-Regel, gesperrte Buttons am Anfang und Ende, freien Modus sowie Springen bei laufendem und bei pausiertem Timer. Layout per Screenshot bei 360 px Breite und 900 bzw. 700 px Höhe.
+
+**Prüfhinweis:** Im Headless-Browser bleibt die Hintergrundfarbe auf dem Vorlauf-Grau stehen, obwohl die richtige Phasenklasse gesetzt ist. Das liegt am Vorspulen der Zeit (`--virtual-time-budget`), bei dem der 0,4-s-Farbübergang nicht mitläuft – der Stand vor Phase 12 zeigt dasselbe. Für Farbprüfungen den berechneten Klassennamen auswerten, nicht den Screenshot.
+
+### Phase 13 – noch offen
+Pausendauer pro Übung, Import/Export von Routinen (bewusst zurückgestellt, solange keine wichtigen Routinen gespeichert sind), Umsortieren der Kacheln, Vorlaufdauer über die Oberfläche einstellbar.
 
 ## Workflow nach jeder Phase
 1. Im Browser testen

@@ -709,6 +709,24 @@
     aspect-ratio: 1;
   }
 
+  /* Phase 12: Vorherige/Nächste Übung als zweite Reihe unter Start/Pause/Zurücksetzen,
+     gleich breit wie diese. Mit Text statt nur Symbol, weil sich die beiden Symbole
+     sonst leicht mit Start und Zurücksetzen verwechseln lassen. Flacher als die
+     quadratischen Buttons darüber, damit die Ansicht nicht unnötig in die Höhe wächst. */
+  #sprung-bereich {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(10px, 3vw, 16px);
+    width: clamp(300px, 80vw, 420px);
+  }
+
+  #sprung-bereich button {
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 8px; /* Abstand zwischen Symbol und Text */
+  }
+
   /* Ton-Button: reines Lautsprecher-Symbol, klein und fest oben rechts positioniert -
      unabhängig vom übrigen Layout darunter (bleibt beim Scrollen an derselben Stelle). */
   #stumm-button {
@@ -904,6 +922,26 @@
         </svg>
       </button>
     </div>
+
+    <!-- Phase 12: Zur vorherigen oder nächsten Übung springen -->
+    <div id="sprung-bereich">
+      <button id="vorherige-button">
+        <!-- Dreieck nach links mit Strich: "an den Anfang" -->
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="19 20 9 12 19 4 19 20"></polygon>
+          <line x1="5" y1="19" x2="5" y2="5"></line>
+        </svg>
+        Vorherige
+      </button>
+      <button id="naechste-button">
+        Nächste
+        <!-- Dreieck nach rechts mit Strich: "zum nächsten" -->
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 4 15 12 5 20 5 4"></polygon>
+          <line x1="19" y1="5" x2="19" y2="19"></line>
+        </svg>
+      </button>
+    </div>
   </div>
 
   </div> <!-- Ende #ansicht-training -->
@@ -1043,6 +1081,8 @@
     const startButton = document.getElementById("start-button");
     const pauseButton = document.getElementById("pause-button");
     const resetButton = document.getElementById("reset-button");
+    const vorherigeButton = document.getElementById("vorherige-button");
+    const naechsteButton = document.getElementById("naechste-button");
     const stummButton = document.getElementById("stumm-button");
 
     // Phase 9: Startbildschirm und Editor
@@ -1252,6 +1292,7 @@
 
       rundenAnzeige.textContent = zaehlerBezeichnung + " " + abschnitt.nummer + " von " + gesamtUebungen;
       naechsteAnzeige.textContent = vorschauText();
+      aktualisiereSprungButtons();
     }
 
     // Phase 11: Text für die Vorschau auf die nächste Übung. Nur in Pause und Vorlauf,
@@ -2181,6 +2222,93 @@
       pauseButton.disabled = true;
     }
 
+    // ---- Phase 12: Zur vorherigen oder nächsten Übung springen ----
+
+    // Innerhalb der ersten Sekunden einer Übung führt "Vorherige" zur Übung davor,
+    // danach an den Anfang der laufenden Übung - wie die Zurück-Taste eines
+    // Musikplayers. So lässt sich eine Übung wiederholen und trotzdem mit zweimal
+    // Tippen weiter zurückgehen.
+    const ZURUECK_SCHWELLE_SEKUNDEN = 3;
+
+    // Beginnt an dieser Stelle des Plans eine Übung? Eine zweiseitige Übung besteht aus
+    // mehreren Abschnitten (links, Seitenwechsel, rechts) - gesprungen wird immer an
+    // ihren ersten. Eine Übung beginnt am Planbeginn oder direkt nach Pause bzw. Vorlauf.
+    function istUebungsbeginn(index) {
+      if (ablaufplan[index].typ !== "uebung") {
+        return false;
+      }
+      return index === 0 || ablaufplan[index - 1].typ === "pause" || ablaufplan[index - 1].typ === "vorbereitung";
+    }
+
+    // Planposition des nächsten Übungsbeginns, oder null in der letzten Übung
+    function zielNaechste() {
+      for (let i = aktuellerAbschnittIndex + 1; i < ablaufplan.length; i++) {
+        if (istUebungsbeginn(i)) {
+          return i;
+        }
+      }
+      return null;
+    }
+
+    // Planposition für "Vorherige", oder null im Vorlauf (davor gibt es nichts).
+    // In einer Pause ist das die gerade beendete Übung, die sich so wiederholen lässt.
+    function zielVorherige() {
+      let anfang = null;
+      for (let i = aktuellerAbschnittIndex; i >= 0; i--) {
+        if (istUebungsbeginn(i)) {
+          anfang = i;
+          break;
+        }
+      }
+
+      if (anfang === null) {
+        return null;
+      }
+
+      const vergangen = aktuellePhaseDauer - verbleibendeSekunden;
+      if (anfang === aktuellerAbschnittIndex && vergangen < ZURUECK_SCHWELLE_SEKUNDEN) {
+        for (let i = anfang - 1; i >= 0; i--) {
+          if (istUebungsbeginn(i)) {
+            return i;
+          }
+        }
+      }
+
+      return anfang;
+    }
+
+    function aktualisiereSprungButtons() {
+      vorherigeButton.disabled = zielVorherige() === null;
+      naechsteButton.disabled = zielNaechste() === null;
+    }
+
+    // Springt an eine Planposition. Läuft der Timer, läuft er dort weiter und es
+    // ertönt das übliche Startsignal einer Übung; ist er pausiert, bleibt er pausiert.
+    // Der Timer wird dabei neu aufgesetzt, damit die erste Sekunde der neuen Übung
+    // volle Länge hat statt des Rests der alten Sekunde.
+    function springeZu(ziel) {
+      if (ziel === null) {
+        return;
+      }
+
+      const liefGerade = intervallId !== null;
+      clearInterval(intervallId);
+      intervallId = null;
+
+      aktuellerAbschnittIndex = ziel;
+      uebernehmeAktuellenAbschnitt();
+
+      aktualisiereAnzeige();
+      aktualisierePhaseAnzeige();
+      stoppeRingAnimationSofort(); // Ring springt sofort auf voll, statt hinzugleiten
+      fertigMeldung.textContent = "";
+
+      if (liefGerade) {
+        intervallId = setInterval(timerSchritt, 1000);
+        spielePhasenwechselSignal("pause", aktuellerAbschnitt().typ);
+      }
+    }
+
     // Schaltet den Lautlos-Modus um und aktualisiert Symbol/Optik des Buttons
     // (reines Symbol statt Text: 🔈 = Ton an, 🔇 = durchgestrichen/stumm)
     // Die beiden SVG-Icons für den Ton-Button (Lautsprecher an / durchgestrichen).
@@ -2209,6 +2337,12 @@
     startButton.addEventListener("click", starteTimer);
     pauseButton.addEventListener("click", pausiereTimer);
     resetButton.addEventListener("click", setzeZurueck);
+    vorherigeButton.addEventListener("click", function () {
+      springeZu(zielVorherige());
+    });
+    naechsteButton.addEventListener("click", function () {
+      springeZu(zielNaechste());
+    });
     stummButton.addEventListener("click", schalteStummUm);
 
     // Phase 7b: Übung hinzufügen
